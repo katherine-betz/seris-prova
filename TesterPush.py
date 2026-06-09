@@ -14,22 +14,24 @@ repo_dir = r"/home/seris/Documents/Random Git Stuff"
 
 def add_file(filename):
     os.chdir(repo_dir)
-    sh.git(f"add .")
+    print(filename)
+    subprocess.run(["git", "add", filename])
 
 def log_data(data):
-    today = datetime.today()
+    now = datetime.today()
+    today = str(now.year) + "-" + str(now.month) + "-" + str(now.day)
     print(today)
+    os.mkdir(f"{repo_dir}/{today}")
     for dat in data: # change this to be for csv files in a folder and push the files, maybe rename?
         print(dat)
-        date = datetime.now() # don't do this in the final because you are using the time at time of logging and not the time of recording
-        file = open(f"data_{date}.txt", 'w')
+        time = datetime.now().time() # don't do this in the final because you are using the time at time of logging and not the time of recording
+        file = open(f"{today}/data_{time}.txt", 'w')
         print("open")
         file.write(dat)
         file.close()
         print("close")
-        #add_file(f"data_{date}.txt") # push all the files from a given day to the same folder,
+        add_file(f"{today}/data_{time}.txt") # push all the files from a given day to the same folder,
                                     # could change to make it so that the folders are named after sessions or smth, to allow for changing panels etc.
-    subprocess.run(["git", "add", "."])
     sh.git("commit", "-m", f"\"Add data from {today}\"")
     sh.git("push")
 
