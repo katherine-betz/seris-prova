@@ -18,8 +18,8 @@ def add_file(filename):
     subprocess.run(["git", "add", filename])
 
 def log_data(data):
-    now = datetime.today()
-    today = str(now.year) + "-" + str(now.month) + "-" + str(now.day)
+    now = datetime.now()
+    today = str(datetime.now().year) + "-" + str(now.month) + "-" + str(now.day)
     print(today)
     os.mkdir(f"{repo_dir}/{today}")
     for dat in data: # change this to be for csv files in a folder and push the files, maybe rename?
@@ -36,4 +36,5 @@ def log_data(data):
     sh.git("push")
 
 if __name__ == "__main__":
-    log_data(data)
+    #log_data(data)
+    print(datetime.now().year)
