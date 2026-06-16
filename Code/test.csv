@@ -1,0 +1,11 @@
+Sample Number,1
+Date & Time,2026-06-10 15:12:26.156049
+Vopen (V),10
+Ishort (A),20
+Vmaxp (V),7
+Imaxp (A),12
+Pmax (W),84
+V (V),I (A),P (W)
+10,0,0
+5,10,50
+0,20,0

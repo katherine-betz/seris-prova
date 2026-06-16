@@ -7,7 +7,16 @@ import csv
 from datetime import datetime
 
 BAUD = 19200
-PORT = b'/dev/ttyUSB0'
+PORT = '/dev/ttyUSB0'
+PARAM_CODES = {"time delay": {"Codes": [b'W00136', b'W00137', b'W00138', b'W00139'], "Max": 3000, "Min": 0 }, # id codes for changing sampling parameters, DO NOT CHANGE
+               "sampling time": {"Codes": [b'W00368', b'W00369', b'W00370', b'W00371'], "Max": 99, "Min": 0},
+               "scan current begin": {"Codes": [b'W00128', b'W00129', b'W00130', b'W00131'], "Max": 12.00*10, "Min": 0.0},
+               "scan current end": {"Codes": [b'W00132', b'W000133', b'W00134', b'W00135'], "Max": 12.00*10, "Min": 0.0},
+               "cell area": {"Codes": [b'W00304', b'W00305', b'W00306', b'W00307'], "Max": 9999.0*1000, "Min": 0.001*1000},
+               "irradiance": {"Codes": [b'W00308', b'W00309', b'W00310', b'W00311'], "Max": 1000, "Min": 10},
+               "single test point": {"Codes": [b'W00316', b'W00317', b'W00318', b'W00319'], "Max": 12.00*10, "Min": 0.0},
+               "low power alarm": {"Codes": [b'W00140', b'W00141', b'W00142', b'W00143'], "Max": 1000*10, "Min": 10.00*10}
+    } # HERE -- could potenitally add error checking to check for floats/ints to enforce same things software does but do not have to
 
 # navigating to the repository directory -- ensures that the files are pushed to the correct place
 REPO_DIR = r"/home/seris/Documents/Random Git Stuff"
@@ -48,12 +57,86 @@ def establish_comms(ser):
     data = ser.read(5000)
     print("Reply:", data.hex()) # will probably need to use these parameters at some point to figure out how it infulences decoder, if it does
 
+def apply_param(ser, param_name, param_value):
+    if (param_value < PARAM_CODES[param_name]["Max"] and param_value > PARAM_CODES[param_name]["Min"]):
+        val = [(param_value >> 24) &0xff,
+            (param_value >> 16) &0xff,
+            (param_value >> 8) &0xff,
+            param_value &0xff]
+        
+        for i in range(4):
+            ser.write(PARAM_CODES[param_name]["Codes"][i] + bytes([val[i]]) + b'\r')
+            time.sleep(0.5)
+        ser.write(b'R')
+        time.sleep(1)
+        data = ser.read(10000)
+        print("Reply to", param_name,"change:", data.hex())
+    else:
+        print("ERROR:", param_name, "outside of allowed range. Allowed values are between", PARAM_CODES[param_name]["Min"], "and", PARAM_CODES[param_name]["Max"])
+
+def change_parameters(ser, time_delay=None, sampling_time=None, scan_current_begin=None, scan_current_end=None, cell_area=None, irradiance=None, single_test_point=None, low_power_alarm=None):
+    if time_delay is not None:
+        apply_param(ser, "time delay", time_delay)
+    if sampling_time is not None:
+        apply_param(ser, "sampling time", sampling_time)
+    if scan_current_begin is not None:
+        apply_param(ser, "scan current begin", scan_current_begin*10)
+    if scan_current_end is not None:
+        apply_param(ser, "scan current end", scan_current_end*10)
+    if cell_area is not None:
+        apply_param(ser, "cell area", cell_area*1000)
+    if irradiance is not None:
+        apply_param(ser, "irradiance", irradiance)
+    if single_test_point is not None:
+        apply_param(ser, "single test point", single_test_point*10)
+    if low_power_alarm is not None:
+        apply_param(ser, "low power alarm", low_power_alarm*10)
+
+# Loads stored PV data from PROVA 210 solar module (does with the software installed, without it idk)
+def rec_load(ser):
+    ser.write(b'S0000000001\r')
+    time.sleep(0.5)
+    ser.write(b'S0040001029\r')
+    time.sleep(0.5)
+    ser.write(b'S0103001659\r')
+    time.sleep(0.5)
+    ser.write(b'S0166002289\r')
+    time.sleep(0.5)
+    ser.write(b'S0229002919\r')
+    time.sleep(0.5)
+    ser.write(b'S0292003549\r')
+    time.sleep(0.5)
+    ser.write(b'S0355004179\r')
+    time.sleep(0.5)
+    ser.write(b'S0418004809\r')
+    time.sleep(0.5)
+    ser.write(b'S0481005439\r')
+    time.sleep(0.5)
+    data = ser.read(10000)
+    print("Loaded recorded logs:", data) # HERE -- need to decode
+
+# This function clears the memory of the connected Prova 210, deleting the sample files stored on the PROVA
+def clear_mem(ser):
+    ser.write(b'W00000\0\r')
+    time.sleep(0.5)
+    ser.write(b'W00007\0\r')
+    time.sleep(0.5)    
+    ser.write(b'W00008\0\r')
+    time.sleep(0.5)
+    ser.write(b'W00001\0\r')
+    time.sleep(0.5)
+    ser.write(b'R')
+    
+def load_LCD(ser): # not sure what this will do on the pi
+    ser.write(b'*')
+    
 # This function takes in a serial object, assumed to be connected to a Prova 210, and attempts to perform an autoscan
 # returning the raw binary data recieved in the event of a sucessful scan
 # HERE -- maybe add something so that repeated failures or other error messages raise errors and/or get commmunicated
 def autoscan(ser):
+    errcount = 0
     data = ""
-    while (data != b'\x05\x00'):
+    while (data != b'\x05\x00' and errcount < 10):
         print("Attempting autoscan")
         ser.write(b'A')
 
@@ -61,8 +144,10 @@ def autoscan(ser):
         data = ser.read(10000)
         print("Reply:", data.hex())
         
-        if data == b'\x01': # I think this is the right error code
+        if data == b'\x01': # Error code returned when test leads are not connected properly
             print("Error: Please connect test leads to module")
+            time.sleep(10)
+            errcount += 1
 
     time.sleep(10)
     packet = bytearray()
@@ -75,25 +160,61 @@ def autoscan(ser):
 
         packet.extend(chunk)
 
-    print("Received", len(packet), "bytes")
-    print(len(packet))
-    return packet  
+    print(packet)
+    return packet
+
+def scan(ser):
+    errcount = 0
+    data = ""
+
+    while (data != b'\x05\x00' and errcount < 10):
+        print("Attempting scan")
+        ser.write(b's')
+
+        time.sleep(1)
+        data = ser.read(10000)
+        print("Reply:", data.hex())
+        
+        if data == b'\x01': # Error code returned when test leads are not connected properly
+            print("Error: Please connect test leads to module")
+            time.sleep(10)
+            errcount += 1
+
+    time.sleep(10)
+    packet = bytearray()
+
+    while True:
+        chunk = ser.read(4096)
+
+        if not chunk:
+            break
+
+        packet.extend(chunk)
+
+    print(packet)
+    return packet
     
 # This function takes in binary PV curve data and returns the same data structured as a list of lists,
 # with each inner list being one row of a PV table
 def decode_curve(dat, packet_size = 8, sample_num=1, date_time=datetime.now()):
+    print("dat", dat)
     data = dat.hex()
+    print("data", data)
     num_points = len(data)
     print("data length:", num_points)
     
-    data_header = data[0:16]
-    print("header", data_header)
-    measurements = [data[i:i + packet_size] for i in range(16, num_points, packet_size)]
+    data_header = [int(data[i:i+packet_size], 16) for i in range(0, packet_size*3, packet_size)]
+    print("header", data_header) # im not too sure about the header, it changes when the panel is completely covered
+    measurements = [data[i:i + packet_size] for i in range(packet_size*3, num_points, packet_size)]
     print(measurements)
-    
-    #HERE -- get V_open, I_short, V_max, I_maxp, P_max from sample data
-    #make power column by multiplying current and voltage
-    
+        
+    V_open = data_header[0]/100.0
+    I_short = data_header[1]/10.0
+    P_max_ind = data_header[2]
+
+    V_max_P = float(int(measurements[P_max_ind*2], 16))/1000.0
+    I_max_P = float(int(measurements[P_max_ind*2+1], 16))/1000.0
+    P_max = V_max_P * I_max_P
     
     result = [
         ["Sample Number", sample_num],
@@ -105,7 +226,11 @@ def decode_curve(dat, packet_size = 8, sample_num=1, date_time=datetime.now()):
         ["Pmax (W)", P_max],
         ["V (V)", "I (A)", "P (W)"] # header row for the rest of the measurments
     ]
-    # HERE -- for loop or smth to get rest of data
+    for i in range(0, len(measurements), 2):
+        result.append([float(int(measurements[i], 16))/1000.0, float(int(measurements[i+1], 16))/10.0, float(int(measurements[i], 16)*int(measurements[i+1], 16))/10000])
+
+    print(result)
+    return result
 
 # This function adds a file to the next git commit
 def add_file(filename):
@@ -116,16 +241,18 @@ def add_file(filename):
 # This function takes in data formatted as a list of lists, and writes it to a csv file, making each sublist its own row
 # This function also adds the created file to the next git commit (this is easier than having to keep track of all the files but maybe bad practice so I might change)
 # HERE -- return something to indicate success/failure???
-def write_PV_data(data, today=TODAY, time=datetime.now().time, filename=None):
+def write_PV_data(data=[], today=TODAY, time=str(datetime.now().hour) + ":" + str(datetime.now().minute) + ":" +str(datetime.now().second), filename=None):
+    print(time)
+    print(data)
     if filename is None:
-        filename = f"{today}/data_{time}.txt"
+        filename = f"{REPO_DIR}/data_{time}.csv"
+    print(filename)
         
-    with open(filename, 'w', newline='', encoding='utf-8') as file:
+    with open(filename, mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerows(data)
-        
-    os.mkdir(f"{REPO_DIR}/{today}") # assert correct directory
-    add_file(filename)
+    print("wrote")
+    #add_file(filename)
     
 # This function uploads data to git, using already added files and adding files if needed
 def upload_data(today=TODAY, files_to_add=None):
@@ -139,7 +266,7 @@ def upload_data(today=TODAY, files_to_add=None):
 
 if __name__ == "__main__":
     ser = serial.Serial(
-        '/dev/ttyUSB0',
+        PORT,
         baudrate=BAUD,
         bytesize=8,
         parity='N',
@@ -148,9 +275,25 @@ if __name__ == "__main__":
     )
     
     establish_comms(ser)
+#     data = autoscan(ser)
+#     decoded_data = decode_curve(data)
+#     
+#     result = [
+#         ["Sample Number", 1],
+#         ["Date & Time", datetime.now()],
+#         ["Vopen (V)", 10],
+#         ["Ishort (A)", 20],
+#         ["Vmaxp (V)", 7],
+#         ["Imaxp (A)", 12],
+#         ["Pmax (W)", 84],
+#         ["V (V)", "I (A)", "P (W)"], # header row for the rest of the measurments
+#         [10, 0, 0],
+#         [5, 10, 50],
+#         [0, 20, 0]
+#     ]
+    #write_PV_data(decoded_data)
+    #upload_data()
     data = autoscan(ser)
-    # data = b' 05 00 00 00 01 A1 00 00 00 8C 00 00 00 94 00 00 01 A1 00 00 00 00 00 00 01 A0 00 00 00 01 00 00 01 A0 00 00 00 02 00 00 01 A1 00 00 00 03 00 00 01 A0 00 00 00 04 00 00 01 A0 00 00 00 05 00 00 01 A1 00 00 00 06 00 00 01 A0 00 00 00 07 00 00 01 A0 00 00 00 08 00 00 01 A0 00 00 00 09 00 00 01 A1 00 00 00 0A 00 00 01 A1 00 00 00 0B 00 00 01 A0 00 00 00 0C 00 00 01 A0 00 00 00 0D 00 00 01 A0 00 00 00 0E 00 00 01 A0 00 00 00 0E 00 00 01 A0 00 00 00 0F 00 00 01 A0 00 00 00 10 00 00 01 A1 00 00 00 11 00 00 01 A1 00 00 00 12 00 00 01 A1 00 00 00 13 00 00 01 A1 00 00 00 14 00 00 01 A0 00 00 00 15 00 00 01 A0 00 00 00 16 00 00 01 A0 00 00 00 17 00 00 01 A0 00 00 00 18 00 00 01 A0 00 00 00 19 00 00 01 A1 00 00 00 1A 00 00 01 A1 00 00 00 1B 00 00 01 A0 00 00 00 1C 00 00 01 A0 00 00 00 1C 00 00 01 A1 00 00 00 1D 00 00 01 A1 00 00 00 1E 00 00 01 A0 00 00 00 1F 00 00 01 A0 00 00 00 20 00 00 01 A1 00 00 00 21 00 00 01 A0 00 00 00 22 00 00 01 A1 00 00 00 23 00 00 01 A0 00 00 00 24 00 00 01 A1 00 00 00 25 00 00 01 A0 00 00 00 26 00 00 01 A1 00 00 00 27 00 00 01 A0 00 00 00 28 00 00 01 A1 00 00 00 29 00 00 01 A0 00 00 00 2A 00 00 01 A0 00 00 00 2A 00 00 01 A1 00 00 00 2B 00 00 01 A0 00 00 00 2C 00 00 01 A0 00 00 00 2D 00 00 01 A1 00 00 00 2E 00 0 01 A1 00 00 00 2F 00 00 01 A0 00 00 00 30 00 00 01 A0 00 00 00 31 00 00 01 A0 00 00 00 32 00 00 01 A1 00 00 00 33 00 00 01 A1 00 00 00 34 00 00 01 A1 00 00 00 35 00 00 01 9E 00 00 00 36 00 00 01 9E 00 00 00 37 00 00 01 9E 00 00 00 38 00 00 01 9E 00 00 00 38 00 00 01 9D 00 00 00 39 00 00 01 9D 00 00 00 3A 00 00 01 9C 00 00 00 3B 00 00 01 9C 00 00 00 3C 00 00 01 9B 00 00 00 3D 00 00 01 9B 00 00 00 3E 00 00 01 9A 00 00 00 3F 00 00 01 9A 00 00 00 40 00 00 01 9A 00 00 00 41 00 00 01 99 00 00 00 42 00 00 01 98 00 00 00 43 00 00 01 98 00 00 00 44 00 00 01 98 00 00 00 45 00 00 01 97 00 00 00 46 00 00 01 97 00 00 00 46 00 00 01 96 00 00 00 47 00 00 01 96 00 00 00 48 00 00 01 96 00 00 00 49 00 00 01 95 00 00 00 4A 00 00 01 94 00 00 00 4B 00 00 01 94 00 00 00 4C 00 00 01 93 00 00 00 4D 00 00 01 93 00 00 00 4E 00 00 01 92 00 00 00 4F 00 00 01 92 00 00 00 50 00 00 01 91 00 00 00 51 00 00 01 90 00 00 00 52 00 00 01 90 00 00 00 53 00 00 01 90 00 00 00 54 00 00 01 90 00 00 00 54 00 00 01 8F 00 00 00 55 00 00 01 8E 00 00 00 56 00 00 01 8E 00 00 00 57 00 00 01 8E 00 00 00 58 00 00 01 8D 00 00 00 59 00 00 01 8C 00 00 00 5A 00 00 01 8B 00 00 00 5B 00 00 01 8A 00 00 00 5C 00 00 01 8A 00 00 00 5D 00 00 01 89 00 00 00 5E 00 00 01 89 00 00 00 5F 00 00 01 88 00 00 00 60 00 00 01 88 00 00 00 61 00 00 01 87 00 00 00 62 00 00 01 87 00 00 00 62 00 00 01 86 00 00 00 63 00 00 01 86 00 00 00 64 00 00 01 85 00 00 00 65 00 00 01 85 00 00 00 66 00 00 01 84 00 00 00 67 00 00 01 83 00 00 00 68 00 00 01 83 00 00 00 69 00 00 01 82 00 00 00 6A 00 00 01 81 00 00 00 6B 00 00 01 81 00 00 00 6C 00 00 01 7F 00 00 00 6D 00 00 01 7E 00 00 00 6E 00 00 01 7E 00 00 00 6F 00 00 01 7D 00 00 00 70 00 00 01 7D 00 00 00 70 00 00 01 7C 00 00 00 71 00 00 01 7C 00 00 00 72 00 00 01 7B 00 00 00 73 00 00 01 7A 00 00 00 74 00 00 01 7A 00 00 00 75 00 00 01 79 00 00 00 76 00 00 01 77 00 00 00 77 00 00 01 77 00 00 00 78 00 00 01 76 00 00 00 79 00 00 01 75 00 00 00 7A 00 00 01 74 00 00 00 7B 00 00 01 74 00 00 00 7C 00 00 01 73 00 00 00 7D 00 00 01 72 00 00 00 7E 00 00 01 72 00 00 00 7E 00 00 01 71 00 00 00 7F 00 00 01 70 00 00 00 80 00 00 01 6F 00 00 00 81 00 00 01 6E 00 00 00 82 00 00 01 6D 00 00 00 83 00 00 01 6C 00 00 00 84 00 00 01 6B 00 00 00 85 00 00 01 6A 00 00 00 86 00 00 01 6A 00 00 00 87 00 00 01 68 00 00 00 88 00 00 01 67 00 00 00 89 00 00 01 66 00 00 00 8A 00 00 01 65 00 00 00 8B 00 00 00 00 00 00 00 8C'
     decoded_data = decode_curve(data)
-    write_PV_data(decoded_data)
+    write_PV_data(data=decoded_data)
     upload_data()
-
