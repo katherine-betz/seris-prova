@@ -18,8 +18,10 @@ PARAM_CODES = {"time delay": {"Codes": [b'W00136', b'W00137', b'W00138', b'W0013
                "low power alarm": {"Codes": [b'W00140', b'W00141', b'W00142', b'W00143'], "Max": 1000*10, "Min": 10.00*10}
     } # HERE -- could potenitally add error checking to check for floats/ints to enforce same things software does but do not have to
 
+CHANNEL = 1 # HERE -- change to accomodate multiple channels
+
 # navigating to the repository directory -- ensures that the files are pushed to the correct place
-REPO_DIR = r"/home/seris/Documents/Random Git Stuff"
+REPO_DIR = r"/home/seris/Documents/SERIS-Prova_210_GitHome"
 GIT_TOKEN = "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"
 
 TODAY= str(datetime.now().year) + "-" + str(datetime.now().month) + "-" + str(datetime.now().day)
@@ -102,18 +104,9 @@ def rec_load(ser):
     time.sleep(0.5)
     ser.write(b'S0166002289\r')
     time.sleep(0.5)
-    ser.write(b'S0229002919\r')
-    time.sleep(0.5)
-    ser.write(b'S0292003549\r')
-    time.sleep(0.5)
-    ser.write(b'S0355004179\r')
-    time.sleep(0.5)
-    ser.write(b'S0418004809\r')
-    time.sleep(0.5)
-    ser.write(b'S0481005439\r')
-    time.sleep(0.5)
     data = ser.read(10000)
     print("Loaded recorded logs:", data) # HERE -- need to decode
+    return data
 
 # This function clears the memory of the connected Prova 210, deleting the sample files stored on the PROVA
 def clear_mem(ser):
@@ -204,16 +197,15 @@ def decode_curve(dat, packet_size = 8, sample_num=1, date_time=datetime.now()):
     print("data length:", num_points)
     
     data_header = [int(data[i:i+packet_size], 16) for i in range(0, packet_size*3, packet_size)]
-    print("header", data_header) # im not too sure about the header, it changes when the panel is completely covered
     measurements = [data[i:i + packet_size] for i in range(packet_size*3, num_points, packet_size)]
-    print(measurements)
         
-    V_open = data_header[0]/100.0
+    V_open = data_header[0]/1000.0
     I_short = data_header[1]/10.0
     P_max_ind = data_header[2]
+    print("PMAX IND", P_max_ind)
 
     V_max_P = float(int(measurements[P_max_ind*2], 16))/1000.0
-    I_max_P = float(int(measurements[P_max_ind*2+1], 16))/1000.0
+    I_max_P = float(int(measurements[P_max_ind*2+1], 16))/10.0
     P_max = V_max_P * I_max_P
     
     result = [
@@ -224,14 +216,62 @@ def decode_curve(dat, packet_size = 8, sample_num=1, date_time=datetime.now()):
         ["Vmaxp (V)", V_max_P],
         ["Imaxp (A)", I_max_P],
         ["Pmax (W)", P_max],
-        ["V (V)", "I (A)", "P (W)"] # header row for the rest of the measurments
+        ["V (V)", "I (A)", "P (W)"]# header row for the rest of the measurments
     ]
     for i in range(0, len(measurements), 2):
         result.append([float(int(measurements[i], 16))/1000.0, float(int(measurements[i+1], 16))/10.0, float(int(measurements[i], 16)*int(measurements[i+1], 16))/10000])
-
+    result.append(["END OF SAMPLE"])
+    result.append([""])
     print(result)
     return result
 
+def decode_log_curve(dat, packet_size = 4, header_length = 4, footer_length = 12):
+    print("dat", dat)
+    data = dat.hex()
+    print("data", data)
+    num_points = len(data)
+    print("data length:", num_points)
+    
+    measurements = [data[i:i + packet_size] for i in range(packet_size*header_length, num_points, packet_size)]
+    print(measurements)
+    data_footer = measurements[(len(measurements)-footer_length):len(measurements)]
+    print("footer:", data_footer)
+    sample_num = int(data[0:4], 16)
+    year = int(data[4:6], 16)
+    month = int(data[6:8], 16)
+    day = int(data[8:10], 16)
+    hour = int(data[10:12], 16)
+    minute = int(data[12:14], 16)
+    second = int(data[14:16], 16)
+    
+    date_time = str(year) + "-" + str(month) + "-" + str(day) + " " + str(hour) + ":" + str(minute) + ":" + str(second)
+    print(date_time)
+    V_open = int(data_footer[1], 16)/1000.0 # figure out where this stuff is stored
+    I_short = int(data_footer[0], 16)/5.0
+    P_max_ind = data_footer[2] # need to figure out, maybe just find manually
+
+    V_max_P = 1
+    I_max_P = 1
+    P_max = V_max_P * I_max_P
+    
+    result = [
+        ["Sample Number (Logged Sample)", sample_num],
+        ["Channel Number", CHANNEL],
+        ["Date & Time", date_time],
+        ["Vopen (V)", V_open],
+        ["Ishort (A)", I_short],
+        ["Vmaxp (V)", V_max_P],
+        ["Imaxp (A)", I_max_P],
+        ["Pmax (W)", P_max],
+        ["V (V)", "I (A)", "P (W)"] # header row for the rest of the measurments
+    ]
+    for i in range(0, len(measurements)-footer_length, 2):
+        result.append([float(int(measurements[i], 16))/1000.0, float(int(measurements[i+1], 16))/5.0, float(int(measurements[i], 16)*int(measurements[i+1], 16))/10000])
+    result.append(["END OF LOGGED SAMPLE"])
+    result.append([""])
+    print(result)
+    return result
+    
 # This function adds a file to the next git commit
 def add_file(filename):
     os.chdir(REPO_DIR)
@@ -244,15 +284,18 @@ def add_file(filename):
 def write_PV_data(data=[], today=TODAY, time=str(datetime.now().hour) + ":" + str(datetime.now().minute) + ":" +str(datetime.now().second), filename=None):
     print(time)
     print(data)
+
+    if not os.path.isdir(f"{REPO_DIR}/Data/{today}"):
+        os.mkdir(f"{REPO_DIR}/Data/{today}")
     if filename is None:
-        filename = f"{REPO_DIR}/data_{time}.csv"
+        filename = f"{REPO_DIR}/Data/{today}/data_{today}.csv"
     print(filename)
         
-    with open(filename, mode="w", newline="") as file:
+    with open(filename, mode="a", newline="") as file:
         writer = csv.writer(file)
         writer.writerows(data)
     print("wrote")
-    #add_file(filename)
+    add_file(filename)
     
 # This function uploads data to git, using already added files and adding files if needed
 def upload_data(today=TODAY, files_to_add=None):
@@ -260,7 +303,7 @@ def upload_data(today=TODAY, files_to_add=None):
         for filename in files_to_add:
             add_file(filename)
     
-    os.mkdir(f"{REPO_DIR}/{today}") # assert correct directory
+    os.chdir(f"{REPO_DIR}/Data/{today}") # assert correct directory
     sh.git("commit", "-m", f"\"Add data from {today}\"")
     sh.git("push")  
 
@@ -293,7 +336,14 @@ if __name__ == "__main__":
 #     ]
     #write_PV_data(decoded_data)
     #upload_data()
+    clear_mem(ser)
+    time.sleep(1)
     data = autoscan(ser)
-    decoded_data = decode_curve(data)
+    decoded_data = decode_curve(data, sample_num=2)
+    time.sleep(5)
     write_PV_data(data=decoded_data)
+    time.sleep(10)
+    data2 = rec_load(ser)
+    decoded2 = decode_log_curve(data2)
+    write_PV_data(data=decoded2)
     upload_data()
