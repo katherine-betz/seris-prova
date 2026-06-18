@@ -19,6 +19,14 @@ PARAM_CODES = {"time delay": {"Codes": [b'W00136', b'W00137', b'W00138', b'W0013
     } # HERE -- could potenitally add error checking to check for floats/ints to enforce same things software does but do not have to
 
 CHANNEL = 1 # HERE -- change to accomodate multiple channels
+SER = serial.Serial(
+    PORT,
+    baudrate=BAUD,
+    bytesize=8,
+    parity='N',
+    stopbits=1,
+    timeout=1
+)
 
 # navigating to the repository directory -- ensures that the files are pushed to the correct place
 REPO_DIR = r"/home/seris/Documents/SERIS-Prova_210_GitHome"
@@ -28,7 +36,7 @@ TODAY= str(datetime.now().year) + "-" + str(datetime.now().month) + "-" + str(da
 
 # This function takes in a serial object as an argument and attempts to connect through this serial object
 # to a Prova 210. HERE also takes in the parameters it supplies and uses the to update vars
-def establish_comms(ser):         
+def establish_comms(ser = SER):         
     ser.reset_input_buffer()
 
     ser.dtr = False
@@ -42,24 +50,22 @@ def establish_comms(ser):
     data = b''
     
     while (data != b'\x00\x00\x00'):
-        print("Sending %")
+        print("Requesting connection...")
         ser.write(b'%')
 
         time.sleep(0.5)
 
         data = ser.read(100)
-        print("Reply:", data.hex())
-        print(data)
     
-    print("Sending setup")
+    print("Sending setup command...")
     ser.write(b'S0000000400\r')
 
     time.sleep(1)
-
     data = ser.read(5000)
-    print("Reply:", data.hex()) # will probably need to use these parameters at some point to figure out how it infulences decoder, if it does
+    print("Setup successful") # need to actually check for this
 
-def apply_param(ser, param_name, param_value):
+def apply_param(param_name, param_value, ser = SER):
+    print("Changing", param_name, "to", str(param_value)...)
     if (param_value < PARAM_CODES[param_name]["Max"] and param_value > PARAM_CODES[param_name]["Min"]):
         val = [(param_value >> 24) &0xff,
             (param_value >> 16) &0xff,
@@ -72,11 +78,12 @@ def apply_param(ser, param_name, param_value):
         ser.write(b'R')
         time.sleep(1)
         data = ser.read(10000)
-        print("Reply to", param_name,"change:", data.hex())
     else:
         print("ERROR:", param_name, "outside of allowed range. Allowed values are between", PARAM_CODES[param_name]["Min"], "and", PARAM_CODES[param_name]["Max"])
+    print(param_name, "changed")
 
-def change_parameters(ser, time_delay=None, sampling_time=None, scan_current_begin=None, scan_current_end=None, cell_area=None, irradiance=None, single_test_point=None, low_power_alarm=None):
+def change_parameters(ser = SER, time_delay=None, sampling_time=None, scan_current_begin=None, scan_current_end=None, cell_area=None, irradiance=None, single_test_point=None, low_power_alarm=None):
+    print("Changing parameters...")
     if time_delay is not None:
         apply_param(ser, "time delay", time_delay)
     if sampling_time is not None:
@@ -93,9 +100,11 @@ def change_parameters(ser, time_delay=None, sampling_time=None, scan_current_beg
         apply_param(ser, "single test point", single_test_point*10)
     if low_power_alarm is not None:
         apply_param(ser, "low power alarm", low_power_alarm*10)
+    print("Parameters changed")
 
 # Loads stored PV data from PROVA 210 solar module (does with the software installed, without it idk)
-def rec_load(ser):
+def rec_load(ser = SER):
+    print("Attempting to load recorded logs...")
     ser.write(b'S0000000001\r')
     time.sleep(0.5)
     ser.write(b'S0040001029\r')
@@ -109,7 +118,8 @@ def rec_load(ser):
     return data
 
 # This function clears the memory of the connected Prova 210, deleting the sample files stored on the PROVA
-def clear_mem(ser):
+def clear_mem(ser = SER):
+    print("Clearing memory...")
     ser.write(b'W00000\0\r')
     time.sleep(0.5)
     ser.write(b'W00007\0\r')
@@ -119,23 +129,25 @@ def clear_mem(ser):
     ser.write(b'W00001\0\r')
     time.sleep(0.5)
     ser.write(b'R')
+    print("Memory cleared")
     
-def load_LCD(ser): # not sure what this will do on the pi
+def load_LCD(ser = SER): # not sure what this will do on the pi
     ser.write(b'*')
     
-# This function takes in a serial object, assumed to be connected to a Prova 210, and attempts to perform an autoscan
+# This function takes in a serial object, assumed to be connected to a Prova 210, and attempts to perform an 
 # returning the raw binary data recieved in the event of a sucessful scan
 # HERE -- maybe add something so that repeated failures or other error messages raise errors and/or get commmunicated
-def autoscan(ser):
+def autoscan(ser = SER):
     errcount = 0
     data = ""
+    print("Beginning autoscan...")
+    
     while (data != b'\x05\x00' and errcount < 10):
-        print("Attempting autoscan")
+        print("Attempting autoscan command...")
         ser.write(b'A')
 
         time.sleep(1)
         data = ser.read(10000)
-        print("Reply:", data.hex())
         
         if data == b'\x01': # Error code returned when test leads are not connected properly
             print("Error: Please connect test leads to module")
@@ -154,11 +166,13 @@ def autoscan(ser):
         packet.extend(chunk)
 
     print(packet)
+    print("Autoscan complete")
     return packet
 
-def scan(ser):
+def scan(ser = SER):
     errcount = 0
     data = ""
+    print("Beginning scan...")
 
     while (data != b'\x05\x00' and errcount < 10):
         print("Attempting scan")
@@ -166,7 +180,6 @@ def scan(ser):
 
         time.sleep(1)
         data = ser.read(10000)
-        print("Reply:", data.hex())
         
         if data == b'\x01': # Error code returned when test leads are not connected properly
             print("Error: Please connect test leads to module")
@@ -185,16 +198,15 @@ def scan(ser):
         packet.extend(chunk)
 
     print(packet)
+    print("Scan complete")
     return packet
     
 # This function takes in binary PV curve data and returns the same data structured as a list of lists,
 # with each inner list being one row of a PV table
-def decode_curve(dat, packet_size = 8, sample_num=1, date_time=datetime.now()):
-    print("dat", dat)
+def decode_curve(dat, channel=CHANNEL, packet_size = 8, sample_num=1, date_time=datetime.now()):
+    print("Processsing PV curve data...")
     data = dat.hex()
-    print("data", data)
     num_points = len(data)
-    print("data length:", num_points)
     
     data_header = [int(data[i:i+packet_size], 16) for i in range(0, packet_size*3, packet_size)]
     measurements = [data[i:i + packet_size] for i in range(packet_size*3, num_points, packet_size)]
@@ -210,6 +222,7 @@ def decode_curve(dat, packet_size = 8, sample_num=1, date_time=datetime.now()):
     
     result = [
         ["Sample Number", sample_num],
+        ["Channel Number", channel],
         ["Date & Time", date_time],
         ["Vopen (V)", V_open],
         ["Ishort (A)", I_short],
@@ -223,19 +236,16 @@ def decode_curve(dat, packet_size = 8, sample_num=1, date_time=datetime.now()):
     result.append(["END OF SAMPLE"])
     result.append([""])
     print(result)
+    print("Processsing complete")
     return result
 
-def decode_log_curve(dat, packet_size = 4, header_length = 4, footer_length = 12):
-    print("dat", dat)
+def decode_log_curve(dat, channel=CHANNEL, packet_size = 4, header_length = 4, footer_length = 12):
     data = dat.hex()
-    print("data", data)
     num_points = len(data)
-    print("data length:", num_points)
+    print("Processsing logged curve...") # need to test with multiple curves
     
     measurements = [data[i:i + packet_size] for i in range(packet_size*header_length, num_points, packet_size)]
-    print(measurements)
     data_footer = measurements[(len(measurements)-footer_length):len(measurements)]
-    print("footer:", data_footer)
     sample_num = int(data[0:4], 16)
     year = int(data[4:6], 16)
     month = int(data[6:8], 16)
@@ -248,15 +258,14 @@ def decode_log_curve(dat, packet_size = 4, header_length = 4, footer_length = 12
     print(date_time)
     V_open = int(data_footer[1], 16)/1000.0 # figure out where this stuff is stored
     I_short = int(data_footer[0], 16)/5.0
-    P_max_ind = data_footer[2] # need to figure out, maybe just find manually
-
-    V_max_P = 1
-    I_max_P = 1
+    
+    V_max_P = 0
+    I_max_P = 0
     P_max = V_max_P * I_max_P
     
     result = [
         ["Sample Number (Logged Sample)", sample_num],
-        ["Channel Number", CHANNEL],
+        ["Channel Number", channel],
         ["Date & Time", date_time],
         ["Vopen (V)", V_open],
         ["Ishort (A)", I_short],
@@ -267,9 +276,17 @@ def decode_log_curve(dat, packet_size = 4, header_length = 4, footer_length = 12
     ]
     for i in range(0, len(measurements)-footer_length, 2):
         result.append([float(int(measurements[i], 16))/1000.0, float(int(measurements[i+1], 16))/5.0, float(int(measurements[i], 16)*int(measurements[i+1], 16))/10000])
+        if result[i+9][2] > P_max:
+            P_max = result[i+9][2]
+            V_max_P = result[i+9][0]
+            I_max_P = result[i+9][1]
+    result[5][1] = V_max_P
+    result[6][1] = I_max_P
+    result[7][1] = P_max
     result.append(["END OF LOGGED SAMPLE"])
     result.append([""])
     print(result)
+    print("Processsing complete")
     return result
     
 # This function adds a file to the next git commit
@@ -281,31 +298,59 @@ def add_file(filename):
 # This function takes in data formatted as a list of lists, and writes it to a csv file, making each sublist its own row
 # This function also adds the created file to the next git commit (this is easier than having to keep track of all the files but maybe bad practice so I might change)
 # HERE -- return something to indicate success/failure???
-def write_PV_data(data=[], today=TODAY, time=str(datetime.now().hour) + ":" + str(datetime.now().minute) + ":" +str(datetime.now().second), filename=None):
-    print(time)
-    print(data)
+def write_PV_data(data=[], channel=CHANNEL, today=TODAY, time=str(datetime.now().hour) + ":" + str(datetime.now().minute) + ":" +str(datetime.now().second), filename=None):
+    print("Writing PV data...")
 
-    if not os.path.isdir(f"{REPO_DIR}/Data/{today}"):
-        os.mkdir(f"{REPO_DIR}/Data/{today}")
+    if not os.path.isdir(f"{REPO_DIR}/Data/Channel_{channel}"):
+        os.mkdir(f"{REPO_DIR}/Data/Channel_{channel}")
     if filename is None:
-        filename = f"{REPO_DIR}/Data/{today}/data_{today}.csv"
-    print(filename)
+        filename = f"{REPO_DIR}/Data/Channel_{channel}/data_{today}.csv"
         
     with open(filename, mode="a", newline="") as file:
         writer = csv.writer(file)
         writer.writerows(data)
-    print("wrote")
     add_file(filename)
+    print("Write complete")
     
 # This function uploads data to git, using already added files and adding files if needed
-def upload_data(today=TODAY, files_to_add=None):
+def upload_data(today=TODAY, channel=CHANNEL, files_to_add=None):
+    print("Uploading data...")
     if files_to_add is not None:
         for filename in files_to_add:
             add_file(filename)
     
-    os.chdir(f"{REPO_DIR}/Data/{today}") # assert correct directory
+    os.chdir(f"{REPO_DIR}/Data/Channel_{channel}") # assert correct directory
     sh.git("commit", "-m", f"\"Add data from {today}\"")
-    sh.git("push")  
+    sh.git("push")
+    print("Upload complete")
+
+# Function to switch between different channels, to attach prova to different modules
+def select_channel(channel):
+    pass
+
+# Takes an autoscan of each of the channels listed every <period> minutes
+def cycle_autoscan(ser=SER, period=1, num_scans=100, channels=[1], today=TODAY):
+    # Minimum scan time is around 30 sec for one scan
+    if period > len(channels)/2:
+        print(f"ERROR: Period too short. Setting period to {len(channels)/2} min")
+    scan_num = 1
+    data = None
+    decoded_data = None
+    print("Beginning cycle autoscan...")
+
+    
+    while (scan_num <= num_scans):
+        start_time = time.time()
+        for channel in channels:
+            select_channel(channel)
+            data = autoscan()
+            decoded_data = decode_curve(data, channel=channel, sample_num=scan_num)
+            write_PV_data(data=decoded_data, today=today, channel=channel)
+        scan_num += 1
+        end_time = time.time()
+        time.sleep(period*60-(end_time-start_time))
+    print("Autoscan complete")
+    upload_data(today=today)
 
 if __name__ == "__main__":
     ser = serial.Serial(
@@ -318,32 +363,4 @@ if __name__ == "__main__":
     )
     
     establish_comms(ser)
-#     data = autoscan(ser)
-#     decoded_data = decode_curve(data)
-#     
-#     result = [
-#         ["Sample Number", 1],
-#         ["Date & Time", datetime.now()],
-#         ["Vopen (V)", 10],
-#         ["Ishort (A)", 20],
-#         ["Vmaxp (V)", 7],
-#         ["Imaxp (A)", 12],
-#         ["Pmax (W)", 84],
-#         ["V (V)", "I (A)", "P (W)"], # header row for the rest of the measurments
-#         [10, 0, 0],
-#         [5, 10, 50],
-#         [0, 20, 0]
-#     ]
-    #write_PV_data(decoded_data)
-    #upload_data()
-    clear_mem(ser)
-    time.sleep(1)
-    data = autoscan(ser)
-    decoded_data = decode_curve(data, sample_num=2)
-    time.sleep(5)
-    write_PV_data(data=decoded_data)
-    time.sleep(10)
-    data2 = rec_load(ser)
-    decoded2 = decode_log_curve(data2)
-    write_PV_data(data=decoded2)
-    upload_data()
+    cycle_autoscan(ser, period = 0.5, num_scans = 10)
