@@ -57,12 +57,13 @@ def establish_comms(ser = SER):
 
         data = ser.read(100)
     
-    print("Sending setup command...")
-    ser.write(b'S0000000400\r')
+    while(len(data) < 10):
+        print("Sending setup command...")
+        ser.write(b'S0000000400\r')
 
-    time.sleep(1)
-    data = ser.read(5000)
-    print("Setup successful") # need to actually check for this
+        time.sleep(1)
+        data = ser.read(5000)
+        print("Setup successful") # need to actually check for this
 
 def apply_param(param_name, param_value, ser = SER):
     print("Changing", param_name, "to", str(param_value), "...")
