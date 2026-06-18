@@ -13,7 +13,7 @@ From PC:
 
 2. VNC to Raspberry Pi: (Gives you virtual access to the Pi desktop)
    - Download RealVNC Viewer: https://www.realvnc.com/en/connect/download/viewer/?lai_sr=5-9&lai_sl=l&lai_p=1&lai_na=611310
-   - Open VNC Viewer
-   - Type 192.168.20.146 into the search bar. (if this does not work, check that the Pi is connected to the right wifi network. Then check it's ip address --- your search command should be the Pi's IP address)
+   - Open VNC Viewer. If you do not already have an account, you will need to make one. You can get a free account using a lite plan for non-commercial use only. 
+   - Type `192.168.20.146 into the search bar`. (if this does not work, check that the Pi is connected to the right wifi network. Then check it's ip address --- your search command should be the Pi's IP address)
    - Navigate to Thonny IDE, and open the script `Prova_210_serial_comm.py`
    - In the `if __name__ == "__main__"` block, write the commands you want executed. Or, run the script (green run button on top left) and then type your commands one at a time into the terminal at the bottom of the IDE. 
