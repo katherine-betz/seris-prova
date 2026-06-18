@@ -65,7 +65,7 @@ def establish_comms(ser = SER):
     print("Setup successful") # need to actually check for this
 
 def apply_param(param_name, param_value, ser = SER):
-    print("Changing", param_name, "to", str(param_value)...)
+    print("Changing", param_name, "to", str(param_value), "...")
     if (param_value < PARAM_CODES[param_name]["Max"] and param_value > PARAM_CODES[param_name]["Min"]):
         val = [(param_value >> 24) &0xff,
             (param_value >> 16) &0xff,
@@ -156,14 +156,15 @@ def autoscan(ser = SER):
 
     time.sleep(10)
     packet = bytearray()
+    
+    while packet == bytearray(b''):
+        while True:
+            chunk = ser.read(4096)
 
-    while True:
-        chunk = ser.read(4096)
+            if not chunk:
+                break
 
-        if not chunk:
-            break
-
-        packet.extend(chunk)
+            packet.extend(chunk)
 
     print(packet)
     print("Autoscan complete")
@@ -203,10 +204,12 @@ def scan(ser = SER):
     
 # This function takes in binary PV curve data and returns the same data structured as a list of lists,
 # with each inner list being one row of a PV table
-def decode_curve(dat, channel=CHANNEL, packet_size = 8, sample_num=1, date_time=datetime.now()):
+def decode_curve(dat, channel=CHANNEL, packet_size=8, sample_num=1, date_time=None):
     print("Processsing PV curve data...")
     data = dat.hex()
     num_points = len(data)
+    if date_time is None:
+        date_time = datetime.now()
     
     data_header = [int(data[i:i+packet_size], 16) for i in range(0, packet_size*3, packet_size)]
     measurements = [data[i:i + packet_size] for i in range(packet_size*3, num_points, packet_size)]
@@ -214,7 +217,6 @@ def decode_curve(dat, channel=CHANNEL, packet_size = 8, sample_num=1, date_time=
     V_open = data_header[0]/1000.0
     I_short = data_header[1]/10.0
     P_max_ind = data_header[2]
-    print("PMAX IND", P_max_ind)
 
     V_max_P = float(int(measurements[P_max_ind*2], 16))/1000.0
     I_max_P = float(int(measurements[P_max_ind*2+1], 16))/10.0
@@ -234,8 +236,7 @@ def decode_curve(dat, channel=CHANNEL, packet_size = 8, sample_num=1, date_time=
     for i in range(0, len(measurements), 2):
         result.append([float(int(measurements[i], 16))/1000.0, float(int(measurements[i+1], 16))/10.0, float(int(measurements[i], 16)*int(measurements[i+1], 16))/10000])
     result.append(["END OF SAMPLE"])
-    result.append([""])
-    print(result)
+    result.append([])
     print("Processsing complete")
     return result
 
@@ -255,7 +256,6 @@ def decode_log_curve(dat, channel=CHANNEL, packet_size = 4, header_length = 4, f
     second = int(data[14:16], 16)
     
     date_time = str(year) + "-" + str(month) + "-" + str(day) + " " + str(hour) + ":" + str(minute) + ":" + str(second)
-    print(date_time)
     V_open = int(data_footer[1], 16)/1000.0 # figure out where this stuff is stored
     I_short = int(data_footer[0], 16)/5.0
     
@@ -284,8 +284,7 @@ def decode_log_curve(dat, channel=CHANNEL, packet_size = 4, header_length = 4, f
     result[6][1] = I_max_P
     result[7][1] = P_max
     result.append(["END OF LOGGED SAMPLE"])
-    result.append([""])
-    print(result)
+    result.append([])
     print("Processsing complete")
     return result
     
@@ -305,6 +304,8 @@ def write_PV_data(data=[], channel=CHANNEL, today=TODAY, time=str(datetime.now()
         os.mkdir(f"{REPO_DIR}/Data/Channel_{channel}")
     if filename is None:
         filename = f"{REPO_DIR}/Data/Channel_{channel}/data_{today}.csv"
+    else:
+        filename = f"{REPO_DIR}/Data/Channel_{channel}/{filename}.csv"
         
     with open(filename, mode="a", newline="") as file:
         writer = csv.writer(file)
@@ -344,23 +345,10 @@ def cycle_autoscan(ser=SER, period=1, num_scans=100, channels=[1], today=TODAY):
         for channel in channels:
             select_channel(channel)
             data = autoscan()
-            decoded_data = decode_curve(data, channel=channel, sample_num=scan_num)
+            decoded_data = decode_curve(data, channel=channel, sample_num=scan_num, date_time=datetime.now())
             write_PV_data(data=decoded_data, today=today, channel=channel)
         scan_num += 1
         end_time = time.time()
         time.sleep(period*60-(end_time-start_time))
     print("Autoscan complete")
     upload_data(today=today)
-
-if __name__ == "__main__":
-    ser = serial.Serial(
-        PORT,
-        baudrate=BAUD,
-        bytesize=8,
-        parity='N',
-        stopbits=1,
-        timeout=1
-    )
-    
-    establish_comms(ser)
-    cycle_autoscan(ser, period = 0.5, num_scans = 10)
