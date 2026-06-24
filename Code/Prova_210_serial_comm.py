@@ -87,21 +87,21 @@ def apply_param(param_name, param_value, ser = SER):
 def change_parameters(ser = SER, time_delay=None, sampling_time=None, scan_current_begin=None, scan_current_end=None, cell_area=None, irradiance=None, single_test_point=None, low_power_alarm=None):
     print("Changing parameters...")
     if time_delay is not None:
-        apply_param(ser, "time delay", time_delay)
+        apply_param("time delay", time_delay)
     if sampling_time is not None:
-        apply_param(ser, "sampling time", sampling_time)
+        apply_param("sampling time", sampling_time)
     if scan_current_begin is not None:
-        apply_param(ser, "scan current begin", scan_current_begin*10)
+        apply_param("scan current begin", scan_current_begin*10)
     if scan_current_end is not None:
-        apply_param(ser, "scan current end", scan_current_end*10)
+        apply_param("scan current end", scan_current_end*10)
     if cell_area is not None:
-        apply_param(ser, "cell area", cell_area*1000)
+        apply_param("cell area", cell_area*1000)
     if irradiance is not None:
-        apply_param(ser, "irradiance", irradiance)
+        apply_param("irradiance", irradiance)
     if single_test_point is not None:
-        apply_param(ser, "single test point", single_test_point*10)
+        apply_param("single test point", single_test_point*10)
     if low_power_alarm is not None:
-        apply_param(ser, "low power alarm", low_power_alarm*10)
+        apply_param("low power alarm", low_power_alarm*10)
     print("Parameters changed")
 
 # Loads stored PV data from PROVA 210 solar module (does with the software installed, without it idk)
@@ -299,7 +299,7 @@ def add_file(filename):
 # This function takes in data formatted as a list of lists, and writes it to a csv file, making each sublist its own row
 # This function also adds the created file to the next git commit (this is easier than having to keep track of all the files but maybe bad practice so I might change)
 # HERE -- return something to indicate success/failure???
-def write_PV_data(data=[], channel=CHANNEL, today=TODAY, time=str(datetime.now().hour) + ":" + str(datetime.now().minute) + ":" +str(datetime.now().second), filename=None):
+def write_PV_data(data=[], channel=CHANNEL, today=TODAY, filename=None):
     print("Writing PV data...")
 
     if not os.path.isdir(f"{REPO_DIR}/Data/Channel_{channel}"):
@@ -329,10 +329,6 @@ def upload_data(today=TODAY, channel=CHANNEL, files_to_add=None):
     sh.git("push")
     print("Upload complete")
 
-# Function to switch between different channels, to attach prova to different modules
-def select_channel(channel):
-    pass
-
 # Takes an autoscan of each of the channels listed every <period> minutes
 def cycle_autoscan(ser=SER, period=1, num_scans=100, channels=[1], today=TODAY):
     # Minimum scan time is around 30 sec for one scan
@@ -358,4 +354,11 @@ def cycle_autoscan(ser=SER, period=1, num_scans=100, channels=[1], today=TODAY):
     upload_data(today=today)
     
 if __name__ == "__main__":
-    pass
+    establish_comms()
+    data = autoscan()
+    decoded = decode_curve(data, sample_num=4)
+    change_parameters(time_delay = 1000, scan_current_begin = 0.1, scan_current_end = 5)
+    data = scan()
+    decoded = decode_curve(data, sample_num=5)
+    write_PV_data(decoded)
+    upload_data()
