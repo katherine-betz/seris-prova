@@ -19,15 +19,15 @@ def test_relay(channel = CHANNEL):
     relay_setup()
     
     try:
-    # Run the loop function indefinitely
-    while True:
-        # Turn the relay ON (HIGH)
-        GPIO.output(CHANNEL_PINS[channel-1], GPIO.HIGH)
-        time.sleep(1)  # Wait for 1 seconds
+        # Run the loop function indefinitely
+        while True:
+            # Turn the relay ON (HIGH)
+            GPIO.output(CHANNEL_PINS[channel-1], GPIO.HIGH)
+            time.sleep(1)  # Wait for 1 seconds
 
-        # Turn the relay OFF (LOW)
-        GPIO.output(CHANNEL_PINS[channel-1], GPIO.LOW)
-        time.sleep(1)  # Wait for 1 seconds
+            # Turn the relay OFF (LOW)
+            GPIO.output(CHANNEL_PINS[channel-1], GPIO.LOW)
+            time.sleep(1)  # Wait for 1 seconds
 
     except KeyboardInterrupt:
         # If the user presses Ctrl+C, clean up the GPIO configuration

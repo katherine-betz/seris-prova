@@ -5,6 +5,7 @@ import sh, os
 import subprocess
 import csv
 from datetime import datetime
+from relay_code import *
 
 BAUD = 19200
 PORT = '/dev/ttyUSB0'
@@ -317,11 +318,13 @@ def write_PV_data(data=[], channel=CHANNEL, today=TODAY, time=str(datetime.now()
 # This function uploads data to git, using already added files and adding files if needed
 def upload_data(today=TODAY, channel=CHANNEL, files_to_add=None):
     print("Uploading data...")
+
     if files_to_add is not None:
         for filename in files_to_add:
             add_file(filename)
     
     os.chdir(f"{REPO_DIR}/Data/Channel_{channel}") # assert correct directory
+    sh.git("pull")
     sh.git("commit", "-m", f"\"Add data from {today}\"")
     sh.git("push")
     print("Upload complete")
@@ -353,3 +356,6 @@ def cycle_autoscan(ser=SER, period=1, num_scans=100, channels=[1], today=TODAY):
         time.sleep(period*60-(end_time-start_time))
     print("Autoscan complete")
     upload_data(today=today)
+    
+if __name__ == "__main__":
+    pass
