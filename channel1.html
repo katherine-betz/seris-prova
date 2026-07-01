@@ -32,7 +32,11 @@
                                 <select id="dataDropdown" onchange="navigateToSelectedPage(this.value)">
                                     <option value="">--choose an option--</option>
                                 </select>
-                                <script>populateDropdown(fetchFileNames("katherine-betz", "seris-prova", "data/Channel_1"), "dataDropdown")</script>
+                                <script>
+                                    files = fetchFileNames("katherine-betz", "seris-prova", "data/Channel_1")
+                                    populateDropdown(files, "dataDropdown")
+                                </script>
+                                <p>files are ${files}</p>
                             </section>
 
 					</div>
