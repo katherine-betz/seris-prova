@@ -11,7 +11,14 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 		<link rel="stylesheet" href="assets/css/main.css" />
 		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
-	</head>
+            <style>
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        </style>
+        <!-- Include D3.js library to parse the CSV -->
+        <script src="https://d3js.org"></script>
+    </head>
 	<body class="is-preload">
 
 		<!-- Wrapper -->
@@ -44,11 +51,16 @@
                                     });
                                     populateDropdown(files, "dataDropdown");
                                     document.getElementById("para").textContent += files.toString();
+                                    document.getElementById("para").textContent += "tester!"
                                 </script>
                                 
                             </section>
 
 					</div>
+
+                    <h1>My CSV Data Dashboard</h1>
+                    <div id=""table-container"></div>
+                    <script src="app.js"></script>
 
 				<!-- Footer -->
 					<footer id="footer">
