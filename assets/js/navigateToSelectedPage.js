@@ -21,8 +21,8 @@ function populateDropdown(itemList, dropdownName){
 
 // returns a list of file names from csv files uploaded to specific folder
 function fetchFileNames(owner, repo, folderPath = ""){
-    const url = 'https://api/github.com/repos/${owner}/${repo}/contents/${folderPath}';
-
+    const url = `https://api/github.com/repos/${owner}/${repo}/contents/${folderPath}`;
+    
     try {
         const response = await fetch(url);
 
@@ -30,17 +30,26 @@ function fetchFileNames(owner, repo, folderPath = ""){
             throw new Error('GitHub API error: ${response.status} ${response.statusText}');
         }
 
-        const data = await Response.json();
+        const data = await response.json();
 
         // return only files (ignore sub-folders)
-        const files = data.filter(item => item.type === "file").map(item => ({
-            name: item.name, path: item.path, downloadUrl: item.download_url
-        }));
+        const files = data.filter(item => item.type === "file");
+        
+        if (files.length === 0) {
+            viles = []
+            return;
+        }
+        
+        files.forEach(file => {
+            const li = document.createElement('li')
+            
+            li.innerHTML = `<a href="${file.download_url}" target="_blank">${file.name}</a>`;
+        });
 
-        return files;
     } catch (e) {
         console.error("Failed to fetch folder contents:", e);
         return [];
     }
+    return files;
 }
 
