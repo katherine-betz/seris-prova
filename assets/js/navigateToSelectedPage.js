@@ -21,12 +21,12 @@ function populateDropdown(itemList, dropdownName){
 
 // returns a list of file names from csv files uploaded to specific folder
 async function fetchFileNames(owner, repo, folderPath = ""){
-    const url = https://api/github.com/repos/${owner}/${repo}/contents/${folderPath}
+    const url = 'https://api/github.com/repos/${owner}/${repo}/contents/${folderPath}';
 
     try {
-        const reponse = await fetch(url);
+        const response = await fetch(url);
 
-        if (!Response.ok) {
+        if (!response.ok) {
             throw new Error('GitHub API error: ${response.status} ${response.statusText}');
         }
 
