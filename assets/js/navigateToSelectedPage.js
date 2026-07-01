@@ -4,15 +4,15 @@ function navigateToSelectedPage(dropdown) {
 }
 
 // takes a list of items and populates a html dropdown with them
-function populateDropdown(itemList){
-    const dropdown = document.getElementById("myDropdown");
+function populateDropdown(itemList, dropdownName){
+    const dropdown = document.getElementById(dropdownName);
     dropdown.innerHTML = ""; // clearing any existing options
 
-    DataTransferItemList.forEach(item => {
+    frameworks.forEach(item => {
         // create a new <option> element for each list element
-        const option = document.createElement("option");
+        let option = document.createElement("option");
 
-        option.text = item;
+        option.textContent = item;
         option.value = item.toLowerCase();
 
         dropdown.appendChild(option);
