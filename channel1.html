@@ -29,14 +29,16 @@
 							<section id="content" class="main">
 								<span class="image main"><img src="images/pic04.jpg" alt="" /></span>
 								<h2>Select date of data collection</h2>
+                                <p id = "para">files are</p>
                                 <select id="dataDropdown" onchange="navigateToSelectedPage(this.value)">
                                     <option value="">--choose an option--</option>
                                 </select>
                                 <script>
-                                    files = fetchFileNames("katherine-betz", "seris-prova", "data/Channel_1")
-                                    populateDropdown(files, "dataDropdown")
+                                    files = fetchFileNames("katherine-betz", "seris-prova", "data/Channel_1");
+                                    populateDropdown(files, "dataDropdown");
+                                    document.getElementById("para").textContent += files.toString();
                                 </script>
-                                <p>files are ${files}</p>
+                                
                             </section>
 
 					</div>
