@@ -36,20 +36,20 @@ function fetchFileNames(owner, repo, folderPath = ""){
         const files = data.filter(item => item.type === "file");
         
         if (files.length === 0) {
-            viles = []
-            return;
+            return ["first if"];
         }
         
         files.forEach(file => {
             const li = document.createElement('li')
             
             li.innerHTML = `<a href="${file.download_url}" target="_blank">${file.name}</a>`;
+            filelist.append[file.name]
         });
 
     } catch (e) {
         console.error("Failed to fetch folder contents:", e);
         return [];
     }
-    return files;
+    return filelist;
 }
 
