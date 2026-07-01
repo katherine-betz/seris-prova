@@ -29,11 +29,10 @@
 							<section id="content" class="main">
 								<span class="image main"><img src="images/pic04.jpg" alt="" /></span>
 								<h2>Select date of data collection</h2>
-                                <select onchange="navigateToSelectedPage(this.value)">
-                                    <option value="20/06/2026.html">20/06/2026</option>
-                                    <option value="21/06/2026.html">21/06/2026</option>
-                                    <option value="22/06/2026.html">22/06/2026</option>
+                                <select id="dataDropdown" onchange="navigateToSelectedPage(this.value)">
+                                    <option value="">--choose an option--</option>
                                 </select>
+                                populateDropdown(fetchFileNames("katherine-betz", "seris-prova", "data/Channel_1"), "dataDropdown")
                             </section>
 
 					</div>
