@@ -34,7 +34,14 @@
                                     <option value="">--choose an option--</option>
                                 </select>
                                 <script>
-                                    files = fetchFileNames("katherine-betz", "seris-prova", "Data/Channel_1");
+                                    files = fetchFileNames("katherine-betz", "seris-prova", folderPath = "Data/Channel_1")
+                                        .then(files => {
+                                        console.log("Files found:", files);
+                                        // You can loop through files to render them to your page
+                                        files.forEach(file => {
+                                            console.log(`File Name: ${file.name} | Link: ${file.downloadUrl}`);
+                                        });
+                                    });
                                     populateDropdown(files, "dataDropdown");
                                     document.getElementById("para").textContent += files.toString();
                                 </script>
