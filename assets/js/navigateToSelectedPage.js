@@ -52,4 +52,3 @@ function fetchFileNames(owner, repo, folderPath = ""){
     }
     return filelist;
 }
-
