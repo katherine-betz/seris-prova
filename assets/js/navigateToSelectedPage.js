@@ -2,3 +2,44 @@ function navigateToSelectedPage(dropdown) {
     const targetUrl = dropdown.value;
     window.location.href = targetUrl;
 }
+
+// takes a list of items and populates a html dropdown with them
+function populateDropdown(itemList){
+    const dropdown = document.getElementById("myDropdown");
+    dropdown.innerHTML = ""; // clearing any existing options
+
+    DataTransferItemList.forEach(item => {
+        // create a new <option> element for each list element
+        const option = document.createElement("option");
+
+        option.text = item;
+        option.value = item.toLowerCase();
+
+        dropdown.appendChild(option);
+    });
+}
+
+// returns a list of file names from csv files uploaded to specific folder
+async function fetchFileNames(owner, repo, folderPath = ""){
+    const url = https://api/github.com/repos/${owner}/${repo}/contents/${folderPath}
+
+    try {
+        const reponse = await fetch(url);
+
+        if (!Response.ok) {
+            throw new Error('GitHub API error: ${response.status} ${response.statusText}');
+        }
+
+        const data = await Response.json();
+
+        // return only files (ignore sub-folders)
+        const files = data.filter(item => item.type === "file").map(item => ({
+            name: item.name, path: item.path, downloadUrl: item.download_url
+        }));
+
+        return files;
+    } catch (e) {
+        console.error("Failed to fetch folder contents:", e);
+        return [];
+    }
+}
