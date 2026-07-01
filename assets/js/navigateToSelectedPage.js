@@ -20,7 +20,7 @@ function populateDropdown(itemList, dropdownName){
 }
 
 // returns a list of file names from csv files uploaded to specific folder
-async function fetchFileNames(owner, repo, folderPath = ""){
+function fetchFileNames(owner, repo, folderPath = ""){
     const url = 'https://api/github.com/repos/${owner}/${repo}/contents/${folderPath}';
 
     try {
@@ -43,3 +43,4 @@ async function fetchFileNames(owner, repo, folderPath = ""){
         return [];
     }
 }
+
