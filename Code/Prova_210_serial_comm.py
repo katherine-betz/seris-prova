@@ -19,7 +19,6 @@ PARAM_CODES = {"time delay": {"Codes": [b'W00136', b'W00137', b'W00138', b'W0013
                "low power alarm": {"Codes": [b'W00140', b'W00141', b'W00142', b'W00143'], "Max": 1000*10, "Min": 10.00*10}
     } # HERE -- could potenitally add error checking to check for floats/ints to enforce same things software does but do not have to
 
-CHANNEL = 1 # HERE -- change to accomodate multiple channels
 SER = serial.Serial(
     PORT,
     baudrate=BAUD,
@@ -355,7 +354,8 @@ def cycle_autoscan(ser=SER, period=1, num_scans=100, channels=[1], today=TODAY):
     upload_data(today=today)
     
 if __name__ == "__main__":
-    data = autoscan()
-    decoded = decode_curve(data, sample_num=15)
-    write_PV_data(decoded)
-    upload_data()
+#     data = autoscan()
+#     decoded = decode_curve(data, sample_num=15)
+#     write_PV_data(decoded)
+#     upload_data()
+    print(CHANNEL)

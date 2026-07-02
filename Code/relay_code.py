@@ -2,7 +2,7 @@
 import RPi.GPIO as GPIO
 import time
 
-CHANNEL = 1
+CHANNEL = 3
 CHANNEL_PINS = {1: [4, 15], 2: [17, 22], 3: [24, 10], 4: [25, 11]} # put GPIO pins or smth here maybe?? something to help with switching
 
 # connections:
