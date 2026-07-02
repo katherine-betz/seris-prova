@@ -41,7 +41,7 @@
                                     <option value="">--choose an option--</option>
                                 </select>
                                 <script>
-                                    files = fetchFileNames("katherine-betz", "seris-prova", folderPath = "Data/Channel_1")
+                                    files = fetchFileNames("katherine-betz", "seris-prova", folderPath = "Data/Channel_1") // major broken
                                         .then(files => {
                                         console.log("Files found:", files);
                                         // You can loop through files to render them to your page
@@ -49,15 +49,11 @@
                                             console.log('File Name: ${file.name} | Link: ${file.downloadUrl}');
                                         });
                                     });
-                                    populateDropdown(files, "dataDropdown");
-                                    <!--document.getElementById('para').innerHTML += files.toString();
-                                    document.getElementById('para').innerHTML += "tester!"; // this does not work
-                                    -->
-                                    let Files = "files";
-                                    let str = "File list: " + files + " or " + Files;
-                                    document.getElementById('para').innerHTML += str;
+                                    populateDropdown(files, "dataDropdown"); // this is broken
+                                    document.getElementById('para').innerHTML += files.toString();
+                                    document.getElementById('para').innerHTML += "tester!"; // this works now?
+                                    document.getElementById('para').innerHTML += files;
                                 </script>
-                                <p> File list: ${files} or ${Files}!!</p>
                                 
                             </section>
 
