@@ -11,7 +11,7 @@ BAUD = 19200
 PORT = '/dev/ttyUSB0'
 PARAM_CODES = {"time delay": {"Codes": [b'W00136', b'W00137', b'W00138', b'W00139'], "Max": 3000, "Min": 0 }, # id codes for changing sampling parameters, DO NOT CHANGE
                "sampling time": {"Codes": [b'W00368', b'W00369', b'W00370', b'W00371'], "Max": 99, "Min": 0},
-               "scan current begin": {"Codes": [b'W00128', b'W00129', b'W00130', b'W00131'], "Max": 12.00*10, "Min": 0.0},
+               "scan current begin": {"Codes": [b'W00128', b'W00129', b'W00130', b'W00131'], "Max": 120.00, "Min": 0.0},
                "scan current end": {"Codes": [b'W00132', b'W000133', b'W00134', b'W00135'], "Max": 12.00*10, "Min": 0.0},
                "cell area": {"Codes": [b'W00304', b'W00305', b'W00306', b'W00307'], "Max": 9999.0*1000, "Min": 0.001*1000},
                "irradiance": {"Codes": [b'W00308', b'W00309', b'W00310', b'W00311'], "Max": 1000, "Min": 10},
@@ -69,10 +69,10 @@ def establish_comms(ser = SER):
 def apply_param(param_name, param_value, ser = SER):
     print("Changing", param_name, "to", str(param_value), "...")
     if (param_value < PARAM_CODES[param_name]["Max"] and param_value > PARAM_CODES[param_name]["Min"]):
-        val = [(param_value >> 24) &0xff,
-            (param_value >> 16) &0xff,
-            (param_value >> 8) &0xff,
-            param_value &0xff]
+        val = [(int(param_value) >> 24) &0xff,
+            (int(param_value) >> 16) &0xff,
+            (int(param_value) >> 8) &0xff,
+            int(param_value) &0xff]
         
         for i in range(4):
             ser.write(PARAM_CODES[param_name]["Codes"][i] + bytes([val[i]]) + b'\r')
@@ -91,7 +91,8 @@ def change_parameters(ser = SER, time_delay=None, sampling_time=None, scan_curre
     if sampling_time is not None:
         apply_param("sampling time", sampling_time)
     if scan_current_begin is not None:
-        apply_param("scan current begin", scan_current_begin*10)
+        scan_current_begin *= 10
+        apply_param("scan current begin", scan_current_begin)
     if scan_current_end is not None:
         apply_param("scan current end", scan_current_end*10)
     if cell_area is not None:
@@ -354,11 +355,7 @@ def cycle_autoscan(ser=SER, period=1, num_scans=100, channels=[1], today=TODAY):
     upload_data(today=today)
     
 if __name__ == "__main__":
-    establish_comms()
     data = autoscan()
-    decoded = decode_curve(data, sample_num=4)
-    change_parameters(time_delay = 1000, scan_current_begin = 0.1, scan_current_end = 5)
-    data = scan()
-    decoded = decode_curve(data, sample_num=5)
+    decoded = decode_curve(data, sample_num=15)
     write_PV_data(decoded)
     upload_data()
