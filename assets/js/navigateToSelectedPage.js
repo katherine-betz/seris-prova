@@ -21,7 +21,7 @@ function populateDropdown(itemList, dropdownName){
 
 // returns a list of file names from csv files uploaded to specific folder
 function fetchFileNames(owner, repo, folderPath = ""){
-    const url = `https://api/github.com/repos/${owner}/${repo}/contents/${folderPath}`;
+    const url = 'https://api/github.com/repos/${owner}/${repo}/contents/${folderPath}';
     
     try {
         const response = await fetch(url);
@@ -51,4 +51,24 @@ function fetchFileNames(owner, repo, folderPath = ""){
         return [];
     }
     return filelist;
+}
+
+async function fetchFilesBasic(){
+    const url = 'https://api.github.com/repos/katherine-betz/seris-prova/contents/Data/Channel_1';
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.content){
+            const decodedContent = atob(data.content.replace(/\n/g, ''));
+            console.log("File Contents:", decodedContent);
+        } else {
+            console.log("Directory Structure:", data);
+        }
+        return data
+     } catch (error) {
+        console.error("Error fetching repository data:", error);
+    }
+    return "data"
 }
