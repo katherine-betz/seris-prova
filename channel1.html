@@ -51,8 +51,11 @@
                                     });
                                     populateDropdown(files, "dataDropdown");
                                     document.getElementById("para").textContent += files.toString();
-                                    document.getElementById("para").textContent += "tester!";
+                                    document.getElementById("para").textContent += "tester!"; // this does not work
+                                    Files = "files"
                                 </script>
+                                </section>
+                                <p> File list: ${files} or ${Files}</p>
                                 
                             </section>
 
@@ -60,7 +63,7 @@
 
                     <h1>My CSV Data Dashboard</h1>
                     <div id=""table-container"></div>
-                    <script src="assets/js/app.js"></script>
+                    <script src="app.js"></script>
 
 				<!-- Footer -->
 					<footer id="footer">
