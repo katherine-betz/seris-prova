@@ -42,7 +42,14 @@
                                 </select>
                                 <script>
                                     document.getElementById('para').innerHTML += " before fetch!"; // this works now?
-                                    files = ["File 1", "File 2", "File 3"]
+                                    files = fetchFileNames("katherine-betz", "seris-prova", folderPath = "Data/Channel_1") // major broken
+                                        .then(files => {
+                                        console.log("Files found:", files);
+                                        // You can loop through files to render them to your page
+                                        files.forEach(file => {
+                                            console.log('File Name: ${file.name} | Link: ${file.downloadUrl}');
+                                        });
+                                    }); // this is also broken
                                     document.getElementById('para').innerHTML += " before pop!"; // this works now?
 
                                     populateDropdown(files, "dataDropdown"); // this is broken
