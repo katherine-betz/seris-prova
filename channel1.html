@@ -50,14 +50,13 @@
                                         });
                                     });
                                     populateDropdown(files, "dataDropdown");
-                                    <!--document.getElementById("para").textContent += files.toString();
-                                    document.getElementById("para").textContent += "tester!"; // this does not work
+                                    <!--document.getElementById('para').innerHTML += files.toString();
+                                    document.getElementById('para').innerHTML += "tester!"; // this does not work
                                     -->
                                     let Files = "files";
-                                    let str = 'File list: ${files} or ${Files}';
-                                    document.getElementById('para').innerHTML = str;
+                                    let str = "File list: " + files + " or " + Files;
+                                    document.getElementById('para').innerHTML += str;
                                 </script>
-                                </section>
                                 <p> File list: ${files} or ${Files}!!</p>
                                 
                             </section>
@@ -65,7 +64,7 @@
 					</div>
 
                     <h1>My CSV Data Dashboard</h1>
-                    <div id=""table-container"></div>
+                    <div id="table-container"></div>
                     <script src="app.js"></script>
 
 				<!-- Footer -->
