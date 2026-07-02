@@ -36,7 +36,7 @@
 							<section id="content" class="main">
 								<span class="image main"><img src="images/pic04.jpg" alt="" /></span>
 								<h2>Select date of data collection</h2>
-                                <p id = "para">files are</p>
+                                <p id = 'para'>files are</p>
                                 <select id="dataDropdown" onchange="navigateToSelectedPage(this.value)">
                                     <option value="">--choose an option--</option>
                                 </select>
@@ -50,12 +50,15 @@
                                         });
                                     });
                                     populateDropdown(files, "dataDropdown");
-                                    document.getElementById("para").textContent += files.toString();
+                                    <!--document.getElementById("para").textContent += files.toString();
                                     document.getElementById("para").textContent += "tester!"; // this does not work
+                                    -->
                                     Files = "files"
+                                    let str = 'File list: ${files} or ${Files}';
+                                    document.getElementById('para').innerHTML = str;
                                 </script>
                                 </section>
-                                <p> File list: $files or $Files</p>
+                                <p> File list: $files or ${Files}</p>
                                 
                             </section>
 
