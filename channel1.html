@@ -41,6 +41,7 @@
                                     <option value="">--choose an option--</option>
                                 </select>
                                 <script>
+                                    document.getElementById('para').innerHTML += " before fetch!"; // this works now?
                                     files = fetchFileNames("katherine-betz", "seris-prova", folderPath = "Data/Channel_1") // major broken
                                         .then(files => {
                                         console.log("Files found:", files);
@@ -49,10 +50,12 @@
                                             console.log('File Name: ${file.name} | Link: ${file.downloadUrl}');
                                         });
                                     });
+                                    document.getElementById('para').innerHTML += " before pop!"; // this works now?
+
                                     populateDropdown(files, "dataDropdown"); // this is broken
+                                    document.getElementById('para').innerHTML += " before add!"
                                     document.getElementById('para').innerHTML += files.toString();
-                                    document.getElementById('para').innerHTML += "tester!"; // this works now?
-                                    document.getElementById('para').innerHTML += files;
+                                    document.getElementById('para').innerHTML += " after add!";
                                 </script>
                                 
                             </section>
