@@ -52,7 +52,11 @@ def switch_relay(new_channel):
         CHANNEL = new_channel
     else:
         print("ERROR: not a valid channel")
-
+        
+def turn_off():
+    for channel, pin in CHANNEL_PINS.items():
+        GPIO.output(pin, GPIO.HIGH)
+        
 if __name__ == "__main__":
     GPIO.setmode(GPIO.BCM)
     relay_setup()
