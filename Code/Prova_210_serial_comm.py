@@ -233,8 +233,8 @@ def decode_curve(dat, channel=CHANNEL, packet_size=8, sample_num=1, date_time=No
         ["Ishort (mA)", I_short],
         ["Vmaxp (V)", V_max_P],
         ["Imaxp (mA)", I_max_P],
-        ["Pmax (W)", P_max],
-        ["V (V)", "I (A)", "P (W)"]# header row for the rest of the measurments
+        ["Pmax (mW)", P_max],
+        ["V (V)", "I (mA)", "P (mW)"]# header row for the rest of the measurments
     ]
     for i in range(0, len(measurements), 2):
         result.append([float(int(measurements[i], 16))/1000.0, float(int(measurements[i+1], 16))/10.0, float(int(measurements[i], 16)*int(measurements[i+1], 16))/10000])
@@ -271,11 +271,11 @@ def decode_log_curve(dat, channel=CHANNEL, packet_size = 4, header_length = 4, f
         ["Channel Number", channel],
         ["Date & Time", date_time],
         ["Vopen (V)", V_open],
-        ["Ishort (A)", I_short],
+        ["Ishort (mA)", I_short],
         ["Vmaxp (V)", V_max_P],
-        ["Imaxp (A)", I_max_P],
-        ["Pmax (W)", P_max],
-        ["V (V)", "I (A)", "P (W)"] # header row for the rest of the measurments
+        ["Imaxp (mA)", I_max_P],
+        ["Pmax (mW)", P_max],
+        ["V (V)", "I (mA)", "P (mW)"] # header row for the rest of the measurments
     ]
     for i in range(0, len(measurements)-footer_length, 2):
         result.append([float(int(measurements[i], 16))/1000.0, float(int(measurements[i+1], 16))/5.0, float(int(measurements[i], 16)*int(measurements[i+1], 16))/10000])
@@ -358,11 +358,10 @@ def cycle_autoscan(ser=SER, period=1, num_scans=100, channels=[1], today=TODAY):
 if __name__ == "__main__":
     if autorun == True:
         relay_setup()
-        switch_relay(1)
+        #switch_relay(1)
         data = autoscan()
-        decoded = decode_curve(data, sample_num=4)
-        write_PV_data(decoded, filename = "large_panel_module_A_relay_wires_two_wire_measurement")
-
+        decoded = decode_curve(data, sample_num=1)
+        write_PV_data(decoded, filename = "test_wire_type_10/07/2026-two_wire_original")
         upload_data()
         print(CHANNEL)
         print("Done")
