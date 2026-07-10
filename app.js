@@ -7,6 +7,7 @@ function displayFileData(channel, file){
         console.log("display file data:", data);
         //const container = document.getElementById("table-container");
         //container.innerHTML = '';
+        d3.selectAll("tbody tr").data([]).exit().remove();
 
         // Create table elements
         const container = d3.select("table-container");
@@ -17,8 +18,6 @@ function displayFileData(channel, file){
 
         // Extract headers from the first data object
         const headers = Object.keys(data[0]);
-
-        d3.selectAll("tbody tr").data([]).exit().remove();
 
         // Append headers row
         thead.append("tr")
