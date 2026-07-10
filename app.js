@@ -5,14 +5,14 @@ function displayFileData(channel, file){
     d3.csv(csvPath).then(function(data) {
         if (data.length === 0) return;
         console.log("display file data:", data);
-        //const container = document.getElementById("table-container");
-        //container.innerHTML = '';
 
         // Create table elements
         const container = d3.select("table-container");
         const table = container.append("table");
         const thead = table.append("thead");
         const tbody = table.append("tbody");
+
+        console.log("Container created");
 
         // Extract headers from the first data object
         const headers = Object.keys(data[0]);
@@ -37,6 +37,8 @@ function displayFileData(channel, file){
             .enter()
             .append("td")
             .text(d => d);
+
+        console.log("Data added");
     }).catch(function(error) {
         console.error("Error loading the CSV file:", error);
     });
