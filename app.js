@@ -16,18 +16,17 @@ function displayFileData(channel, file){
         const tbody = table.append("tbody");
 
         // Extract headers from the first data object
-       // const headers = Object.keys(data[0]);
+        const headers = Object.keys(data[0]);
 
-        d3.selectAll("tbody").data([]).exit().remove();
+        d3.selectAll("tbody tr").data([]).exit().remove();
 
-      /*  // Append headers row
+        // Append headers row
         thead.append("tr")
             .selectAll("th")
             .data(headers)
             .enter()
             .append("th")
             .text(d => d);
-*/
 
         // Append data rows
         const rows = tbody.selectAll("tr")
