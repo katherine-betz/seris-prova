@@ -27,7 +27,7 @@ From PC:
 2. VNC to Raspberry Pi: (Gives you virtual access to the Pi desktop)
    - Download RealVNC Viewer: https://www.realvnc.com/en/connect/download/viewer/?lai_sr=5-9&lai_sl=l&lai_p=1&lai_na=611310
    - Open VNC Viewer. If you do not already have an account, you will need to make one. You can get a free account using a lite plan for non-commercial use only. 
-   - Type the Pi's local ip address (`192.168.20.146` in lab and `10.16.241.117` on the roof) into the search bar. (If this does not work, check that the Pi is connected to the right wifi network. Then check the Pi's local ip address --- this can be done by typing `ping raspberrypi.local -4` into terminal on PC connected to wifi)
+   - Type the Pi's local ip address (in lab: `192.168.20.146`, on roof: `10.16.241.117` for wired connection, `10.16.241.117` for wireless) into the search bar. (If this does not work, check that the Pi is connected to the right wifi network. Then check the Pi's local ip address --- this can be done by typing `ping raspberrypi.local -4` into terminal on PC connected to wifi)
    - Enter `seris` as the username and `solar2941` as the password
    - Navigate to Thonny IDE (Raspberry pi icon in top left > Programming > Thonny), and open the script `Prova_210_serial_comm.py` (File > Open > seris/Documents/SERIS-Prova_210_GitHome/Code/Prova_210_serial_comm.py)
    - In the `if __name__ == "__main__"` block, write the commands you want executed. Or, run the script (green run button on top left) and then type your commands one at a time into the terminal at the bottom of the IDE.
