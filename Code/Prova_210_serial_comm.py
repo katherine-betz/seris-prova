@@ -67,7 +67,10 @@ def establish_comms(ser = SER):
         print("Setup successful") # need to actually check for this
 
 def apply_param(param_name, param_value, ser = SER):
-    print("Changing", param_name, "to", str(param_value), "...")
+    print("Changing", param_name, "to", str(
+    
+    
+    param_value), "...")
     if (param_value < PARAM_CODES[param_name]["Max"] and param_value > PARAM_CODES[param_name]["Min"]):
         val = [(int(param_value) >> 24) &0xff,
             (int(param_value) >> 16) &0xff,
@@ -358,10 +361,10 @@ def cycle_autoscan(ser=SER, period=1, num_scans=100, channels=[1], today=TODAY):
 if __name__ == "__main__":
     if autorun == True:
         relay_setup()
-        #switch_relay(1)
+        switch_relay(2)
         data = autoscan()
-        decoded = decode_curve(data, sample_num=1)
-        write_PV_data(decoded, filename = "test_wire_type_10/07/2026-two_wire_original")
+        decoded = decode_curve(data, sample_num=5)
+        write_PV_data(decoded, filename = "large_module_test_two_wire_relay_B")
         upload_data()
         print(CHANNEL)
         print("Done")
