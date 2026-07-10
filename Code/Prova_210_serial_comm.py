@@ -230,9 +230,9 @@ def decode_curve(dat, channel=CHANNEL, packet_size=8, sample_num=1, date_time=No
         ["Channel Number", channel],
         ["Date & Time", date_time],
         ["Vopen (V)", V_open],
-        ["Ishort (A)", I_short],
+        ["Ishort (mA)", I_short],
         ["Vmaxp (V)", V_max_P],
-        ["Imaxp (A)", I_max_P],
+        ["Imaxp (mA)", I_max_P],
         ["Pmax (W)", P_max],
         ["V (V)", "I (A)", "P (W)"]# header row for the rest of the measurments
     ]
@@ -300,7 +300,8 @@ def add_file(filename):
 # This function takes in data formatted as a list of lists, and writes it to a csv file, making each sublist its own row
 # This function also adds the created file to the next git commit (this is easier than having to keep track of all the files but maybe bad practice so I might change)
 # HERE -- return something to indicate success/failure???
-def write_PV_data(data=[], channel=CHANNEL, today=TODAY, filename=None):
+def write_PV_data(data=[], today=TODAY, filename=None):
+    channel = CHANNEL;
     print("Writing PV data...")
 
     if not os.path.isdir(f"{REPO_DIR}/Data/Channel_{channel}"):
@@ -324,7 +325,7 @@ def upload_data(today=TODAY, channel=CHANNEL, files_to_add=None):
         for filename in files_to_add:
             add_file(filename)
     
-    os.chdir(f"{REPO_DIR}/Data/Channel_{channel}") # assert correct directory
+    os.chdir(f"{REPO_DIR}/Data") # assert correct directory
     sh.git("pull")
     sh.git("commit", "-m", f"\"Add data from {today}\"")
     sh.git("push")
@@ -359,13 +360,9 @@ if __name__ == "__main__":
         relay_setup()
         switch_relay(1)
         data = autoscan()
-        decoded = decode_curve(data, sample_num=1)
-        write_PV_data(decoded, filename = "PRELIMINARY_module_A_relay_wires_two_wire_measurement")
-        print(CHANNEL)
-        switch_relay(2)
-        print(CHANNEL)
-        data = autoscan()
-        decoded = decode_curve(data, sample_num=1)
-        write_PV_data(decoded, filename = "PRELIMINARY_module_B_relay_wires_two_wire_measurement")
+        decoded = decode_curve(data, sample_num=4)
+        write_PV_data(decoded, filename = "large_panel_module_A_relay_wires_two_wire_measurement")
+
         upload_data()
         print(CHANNEL)
+        print("Done")
