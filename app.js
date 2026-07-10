@@ -5,11 +5,12 @@ function displayFileData(channel, file){
     d3.csv(csvPath).then(function(data) {
         if (data.length === 0) return;
         console.log("display file data:", data);
-        const container = document.getElementById("table-container");
-        container.innerHTML = '';
+        //const container = document.getElementById("table-container");
+        //container.innerHTML = '';
 
         // Create table elements
-       // const container = d3.select("table-container");
+        const container = d3.select("table-container");
+        container.innerHTML = '';
         const table = container.append("table");
         const thead = table.append("thead");
         const tbody = table.append("tbody");
