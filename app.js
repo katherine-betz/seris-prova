@@ -11,7 +11,6 @@ function displayFileData(channel, file){
 
         // Create table elements
         const container = d3.select("table-container");
-        container.innerHTML = '';
         const table = container.append("table");
         const thead = table.append("thead");
         const tbody = table.append("tbody");
