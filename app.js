@@ -1,6 +1,8 @@
 function displayFileData(channel, file){
     // Path to your CSV file relative to index.html
     const csvPath = "Data/" + channel + "/" + file; 
+    old_table = document.getElementById("table-container");
+    old_table.innerHTML = '';
 
     d3.csv(csvPath).then(function(data) {
         if (data.length === 0) return;
