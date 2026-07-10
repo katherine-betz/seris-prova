@@ -4,6 +4,7 @@ import time
 import sh, os
 import subprocess
 import csv
+import matplotlib.pyplot as plt
 from datetime import datetime
 from relay_code import *
 from prova_params import *
@@ -210,7 +211,9 @@ def scan(ser = SER):
     
 # This function takes in binary PV curve data and returns the same data structured as a list of lists,
 # with each inner list being one row of a PV table
-def decode_curve(dat, channel=CHANNEL, packet_size=8, sample_num=1, date_time=None):
+def decode_curve(dat, channel=None, packet_size=8, sample_num=1, date_time=None):
+    if channel is None:
+        channel = CHANNEL
     print("Processsing PV curve data...")
     data = dat.hex()
     num_points = len(data)
@@ -246,7 +249,9 @@ def decode_curve(dat, channel=CHANNEL, packet_size=8, sample_num=1, date_time=No
     print("Processsing complete")
     return result
 
-def decode_log_curve(dat, channel=CHANNEL, packet_size = 4, header_length = 4, footer_length = 12):
+def decode_log_curve(dat, channel=None, packet_size = 4, header_length = 4, footer_length = 12):
+    if channel is None:
+        channel = CHANNEL
     data = dat.hex()
     num_points = len(data)
     print("Processsing logged curve...") # need to test with multiple curves
@@ -302,9 +307,12 @@ def add_file(filename):
     
 # This function takes in data formatted as a list of lists, and writes it to a csv file, making each sublist its own row
 # This function also adds the created file to the next git commit (this is easier than having to keep track of all the files but maybe bad practice so I might change)
-# HERE -- return something to indicate success/failure???
-def write_PV_data(data=[], today=TODAY, filename=None):
-    channel = CHANNEL;
+def write_PV_data(data=[], channel=None, today=None, filename=None):
+    if channel is None:
+        channel = CHANNEL
+    
+    if today is None:
+        today = TODAY # might need to recall the function in case they have the program running for multiple days
     print("Writing PV data...")
 
     if not os.path.isdir(f"{REPO_DIR}/Data/Channel_{channel}"):
@@ -319,9 +327,47 @@ def write_PV_data(data=[], today=TODAY, filename=None):
         writer.writerows(data)
     add_file(filename)
     print("Write complete")
+
+def graph_PV_data(sample_num, data=[], channel=None, today=None, filename=None):
+    if channel is None:
+        channel = CHANNEL
+    
+    if today is None:
+        today = TODAY
+
+    print("Graphing PV data...")
+
+    if not os.path.isdir(f"{REPO_DIR}/Data/Channel_{channel}/Graphs"):
+        os.mkdir(f"{REPO_DIR}/Data/Channel_{channel}/Graphs")
+    
+    if filename is None:
+        filename = f"{REPO_DIR}/Data/Channel_{channel}/Graphs/graph_{today}_sample_{sample_num}.png"
+    else:
+        filename = f"{REPO_DIR}/Data/Channel_{channel}/Graphs/{filename}.png"
+
+    voltage = data[9:][0]
+    current = data[9:][1]
+    power = data[9:][2]
+    current_col = 'tab:red'
+    pwr_col = 'tab:blue'
+
+    fig, ax1 = plt.subplots()
+    ax1.set_xlabel('Current (mA)')
+    ax1.set_ylabel('Voltage (V)', color=current_col)
+    ax1.plot(voltage, current, color=current_col, linewidth=2, label='Voltage (V)')
+    ax1.tick_params(axis='y', labelcolor=current_col)
+
+    ax2 = ax1.twinx()
+    ax2.set_ylabel('Power (mW)', color=pwr_col)
+    ax2.plot(voltage, power, color=pwr_col, linewidth=2, label='Power (mW)')
+    ax2.tick_params(axis='y', labelcolor=pwr_col)
+    fig.tight_layout()
+    plt.show()
+    plt.savefig(filename)
+    print("Graphing complete")
     
 # This function uploads data to git, using already added files and adding files if needed
-def upload_data(today=TODAY, channel=CHANNEL, files_to_add=None):
+def upload_data(today=TODAY, channel=None, files_to_add=None):
     print("Uploading data...")
 
     if files_to_add is not None:
