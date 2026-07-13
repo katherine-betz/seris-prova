@@ -32,10 +32,6 @@ From PC:
    - Navigate to Thonny IDE (Raspberry pi icon in top left > Programming > Thonny), and open the script `Prova_210_serial_comm.py` (File > Open > seris/Documents/SERIS-Prova_210_GitHome/Code/Prova_210_serial_comm.py)
    - In the `if __name__ == "__main__"` block, write the commands you want executed. Or, run the script (green run button on top left) and then type your commands one at a time into the terminal at the bottom of the IDE.
 
-# Hosting??
-- Currently data is just stored here, in the data folder
-- Working on setting up a GitHub pages to try to make this pretty
-
 # Autorun
 To disable the automatic data collection, you have two options:
 1. From GitHub:
@@ -59,6 +55,7 @@ To enable automatic data collection, your options depend on how it was disabled.
    - Open the file 'Code/prova_params.py' in this GitHub repo
    - Set `autorun=True`
    - You should now be able to set the rest of the parameters to your desired values and the device will shortly begin taking automated measurements. It will keep taking these measurments until you disable automatic data collection
+
      If this does not work: open a SSH or VNC connection (or log onto the physcial Pi itself) and check the status of the automatic measurement service
      - Open the terminal
      - Change the current directory to the system files directory: type `cd /etc/systemd/system` into the terminal and hit enter
@@ -66,10 +63,14 @@ To enable automatic data collection, your options depend on how it was disabled.
      - There should be a line that says `Active: active (running) since <date_and_time>; <amount_of_time> ago` (hit q to exit the status logs)
      - If instead of `active (running)` this line says `inactive (dead)`, type `sudo systemctl start prova_measurment.service` or `sudo systemctl restart prova_measurment.service`
     
-2. Disabled through SSH, VNC, or the physical Pi:
+1. Disabled through SSH, VNC, or the physical Pi:
    - Open the terminal
    - Change the current directory to the system files directory: type `cd /etc/systemd/system` into the terminal and hit enter
    - Check service status: `sudo systemctl status prova_measurement.service`
    - There should be a line that says `Active: inactive (dead) since <date_and_time>; <amount_of_time> ago` (hit q to exit the status logs)
    - Type `sudo systemctl start prova_measurment.service` or `sudo systemctl restart prova_measurment.service`
    - Check status: should now say `Active: active (running)`
+  
+# Hosting??
+- Working on setting up a GitHub pages to try to make this pretty
+- Not 100% sure what else to say about that, GitHub pages is somewhat functional but not too important
