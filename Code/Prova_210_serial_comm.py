@@ -344,10 +344,14 @@ def graph_PV_data(sample_num, data=[], channel=None, today=None, filename=None):
         filename = f"{REPO_DIR}/Data/Channel_{channel}/Graphs/graph_{today}_sample_{sample_num}.png"
     else:
         filename = f"{REPO_DIR}/Data/Channel_{channel}/Graphs/{filename}.png"
-
-    voltage = data[9:][0]
-    current = data[9:][1]
-    power = data[9:][2]
+    voltage = []
+    current = []
+    power = []
+    
+    for i in range(9, len(data)-2):
+        voltage.append(data[i][0])
+        current.append(data[i][1])
+        power.append(data[i][2])
     current_col = 'tab:red'
     pwr_col = 'tab:blue'
 
@@ -410,7 +414,8 @@ if __name__ == "__main__":
         switch_relay(2)
         data = autoscan()
         decoded = decode_curve(data, sample_num=5)
-        write_PV_data(decoded, filename = "large_module_test_two_wire_relay_B")
+        write_PV_data(decoded, filename = "graph_test")
+        graph_PV_data(1, decoded, filename = "graph_test")
         upload_data()
         print(CHANNEL)
         print("Done")
