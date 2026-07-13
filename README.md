@@ -17,7 +17,7 @@ From PC:
 1. SSH into Raspberry Pi: (Opens a terminal)
    - Open terminal on your computer
    - Ensure you are connected to the same wifi network as the Pi (in lab, SERIS CTO 1, on roof NAME_HERE)
-   - Type `ssh seris@\<local-ip-address\>` (in the lab, this command is `ssh seris@192.168.20.146`, on the roof, it is `ssh seris@10.16.241.117) (if this does not work, check that the Pi is connected to the right wifi network. Then check it's ip address --- the ssh command will be `ssh seris@\<local-ip-address\>`)
+   - Type `ssh seris@\<local-ip-address\>` (in the lab, this command is `ssh seris@192.168.20.146`, on the roof, it is `ssh seris@10.16.241.117`) (if this does not work, check that the Pi is connected to the right wifi network. Then check it's ip address --- the ssh command will be `ssh seris@\<local-ip-address\>`)
    - Enter the password: `solar2941`
    Run startup/connect Pi to PROVA
    - Ensure that the PROVA is turned on and connected to the Pi via USB
