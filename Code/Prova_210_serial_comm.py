@@ -356,8 +356,8 @@ def graph_PV_data(sample_num, data=[], channel=None, today=None, filename=None):
     pwr_col = 'tab:blue'
 
     fig, ax1 = plt.subplots()
-    ax1.set_xlabel('Current (mA)')
-    ax1.set_ylabel('Voltage (V)', color=current_col)
+    ax1.set_ylabel('Current (mA)')
+    ax1.set_xlabel('Voltage (V)', color=current_col)
     ax1.plot(voltage, current, color=current_col, linewidth=2, label='Voltage (V)')
     ax1.tick_params(axis='y', labelcolor=current_col)
 
@@ -366,7 +366,6 @@ def graph_PV_data(sample_num, data=[], channel=None, today=None, filename=None):
     ax2.plot(voltage, power, color=pwr_col, linewidth=2, label='Power (mW)')
     ax2.tick_params(axis='y', labelcolor=pwr_col)
     fig.tight_layout()
-    plt.show()
     plt.savefig(filename)
     print("Graphing complete")
     
@@ -414,8 +413,8 @@ if __name__ == "__main__":
         switch_relay(2)
         data = autoscan()
         decoded = decode_curve(data, sample_num=5)
-        write_PV_data(decoded, filename = "graph_test")
-        graph_PV_data(1, decoded, filename = "graph_test")
+        write_PV_data(decoded)
+        graph_PV_data(1, decoded)
         upload_data()
         print(CHANNEL)
         print("Done")
