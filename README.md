@@ -1,5 +1,5 @@
 # System
-This repo contains documentaton and code required to perform remote mini module measurments using a Prova 210 measurement device, a Raspberry Pi, and a relay module. Capable of switching between __ modules, performing automated measurements, and automatically hosting data on the cloud, this project (is useful because...?)
+This repo contains documentaton and code required to perform remote mini module measurments using a Prova 210 measurement device, a Raspberry Pi, and a relay module. Capable of switching between up to 28 modules (with current architecture supporting 2), performing automated measurements, and automatically hosting data on the cloud, this project allows for easy, hands-off testing of small-scale solar modules.
 
 # Materials
 - Prova 210 PV Analyzer  
