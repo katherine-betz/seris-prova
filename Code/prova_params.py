@@ -3,6 +3,8 @@
 
 CHANNEL = 2 # For non-switching measurements, set the channel
 
+CYCLE_AUTOSCAN_CHANNELS = [1, 2] # for switching measurements, set the channels to measure
+
 time_delay =100; # "Max": 3000, "Min": 0
 sampling_time = 20; #"Max": 99, "Min": 0
 scan_current_begin = 0; #"Max": 120.00, "Min": 0

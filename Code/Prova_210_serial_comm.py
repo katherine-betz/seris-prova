@@ -109,7 +109,7 @@ def change_parameters(ser = SER, time_delay=None, sampling_time=None, scan_curre
         apply_param("low power alarm", low_power_alarm*10)
     print("Parameters changed")
 
-# Loads stored PV data from PROVA 210 solar module (does with the software installed, without it idk)
+# Loads stored PV data from PROVA 210 solar module
 def rec_load(ser = SER):
     print("Attempting to load recorded logs...")
     ser.write(b'S0000000001\r')
@@ -121,7 +121,7 @@ def rec_load(ser = SER):
     ser.write(b'S0166002289\r')
     time.sleep(0.5)
     data = ser.read(10000)
-    print("Loaded recorded logs:", data) # HERE -- need to decode
+    print("Loaded recorded logs:", data)
     return data
 
 # This function clears the memory of the connected Prova 210, deleting the sample files stored on the PROVA
@@ -137,9 +137,6 @@ def clear_mem(ser = SER):
     time.sleep(0.5)
     ser.write(b'R')
     print("Memory cleared")
-    
-def load_LCD(ser = SER): # not sure what this will do on the pi
-    ser.write(b'*')
     
 # This function takes in a serial object, assumed to be connected to a Prova 210, and attempts to perform an 
 # returning the raw binary data recieved in the event of a sucessful scan
@@ -384,7 +381,10 @@ def upload_data(today=TODAY, channel=None, files_to_add=None):
     print("Upload complete")
 
 # Takes an autoscan of each of the channels listed every <period> minutes
-def cycle_autoscan(ser=SER, period=1, num_scans=100, channels=[1], today=TODAY):
+def cycle_autoscan(ser=SER, period=1, num_scans=100, channels=None, today=TODAY):
+    if channels is None:
+        channels = CYCLE_AUTOSCAN_CHANNELS
+        
     # Minimum scan time is around 30 sec for one scan
     if period > len(channels)/2:
         print(f"ERROR: Period too short. Setting period to {len(channels)/2} min")
@@ -410,7 +410,8 @@ def cycle_autoscan(ser=SER, period=1, num_scans=100, channels=[1], today=TODAY):
 if __name__ == "__main__":
     if autorun == True:
         relay_setup()
-        switch_relay(2)
+        switch_relay(CHANNEL)
+        apply_param()
         data = autoscan()
         decoded = decode_curve(data, sample_num=5)
         write_PV_data(decoded)

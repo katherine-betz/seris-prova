@@ -7,11 +7,11 @@ CHANNEL_PINS = {1: [4, 15, 17, 22], 2: [10, 24, 11, 25]} # Add rest of GPIO pins
 
 # connections:
 # connect COM on all positive modules to positive terminal of PROVA
-# connect NO on all positive module                          s to negative (right side usually) terminal of respective terminal
+# connect NO on all positive modules to negative (right side usually) terminal of respective terminal
 # GPIO - INPUT: 4-1, 15-2, 17-3, 22-4, 24-5, 10-6, 25-7,11-8 
 # GND module 1 connects to b4 a3, pwr module 1 connects ro b2, a1
-# 
 
+# sets up the relay by configuring the GPIO pins and opening the relays connected to the current channel (from prova_params.py)
 def relay_setup():
     GPIO.setmode(GPIO.BCM)
     for channel, pin in CHANNEL_PINS.items():
@@ -20,7 +20,8 @@ def relay_setup():
             GPIO.output(pin, GPIO.LOW)
         else:
             GPIO.output(pin, GPIO.HIGH)
-        
+
+# tests the functioning of the relay system
 def test_relay(channel = CHANNEL):
     relay_setup()
     
@@ -39,7 +40,8 @@ def test_relay(channel = CHANNEL):
     except KeyboardInterrupt:
         # If the user presses Ctrl+C, clean up the GPIO configuration
         GPIO.cleanup()
-        
+
+# Switches the open/connected channel/module from whatever the current channel is to the new channel (variable new_channel should be an int)
 def switch_relay(new_channel):
     global CHANNEL
     print("switching", CHANNEL, "to", new_channel)
@@ -55,6 +57,7 @@ def switch_relay(new_channel):
     else:
         print("ERROR: not a valid channel")
         
+# Closes all the relays but does not actually turn the system "off" in that it is still connected
 def turn_off():
     for channel, pin in CHANNEL_PINS.items():
         GPIO.output(pin, GPIO.HIGH)
