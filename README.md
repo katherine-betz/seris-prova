@@ -26,8 +26,11 @@ From PC:
 
 2. VNC to Raspberry Pi: (Gives you virtual access to the Pi desktop)
    - Download RealVNC Viewer: https://www.realvnc.com/en/connect/download/viewer/?lai_sr=5-9&lai_sl=l&lai_p=1&lai_na=611310
-   - Open VNC Viewer. If you do not already have an account, you will need to make one. You can get a free account using a lite plan for non-commercial use only. 
-   - Type the Pi's local ip address (in lab: `192.168.20.146`, on roof: `10.16.241.117` for wired connection, `10.16.241.117` for wireless) into the search bar. (If this does not work, check that the Pi is connected to the right wifi network. Then check the Pi's local ip address --- this can be done by typing `ping raspberrypi.local -4` into terminal on PC connected to wifi)
+   - Open VNC Viewer. Log in using the following credentials:
+     - Email: `raspberrypi.prova@gmail.com`
+     - Password: `solar2941`
+   - The Raspberry Pi should be listed under Devices (named raspberrypiprova). If it does not show up, you can try searching for the pi by ip address to open a local connection
+     - To get a local connection: (only if the raspberry pi is not showing up) Type the Pi's local ip address (in lab: `192.168.20.146`, on roof: `10.16.241.117` for wired connection, `10.16.241.117` for wireless) into the search bar. (If this does not work, check that the Pi is connected to the right wifi network. Then check the Pi's local ip address --- this can be done by typing `ping raspberrypi.local -4` into terminal on PC connected to wifi)
    - Enter `seris` as the username and `solar2941` as the password
    - Navigate to Thonny IDE (Raspberry pi icon in top left > Programming > Thonny), and open the script `Prova_210_serial_comm.py` (File > Open > seris/Documents/SERIS-Prova_210_GitHome/Code/Prova_210_serial_comm.py)
    - In the `if __name__ == "__main__"` block, write the commands you want executed. Or, run the script (green run button on top left) and then type your commands one at a time into the terminal at the bottom of the IDE.
@@ -63,7 +66,7 @@ To enable automatic data collection, your options depend on how it was disabled.
      - There should be a line that says `Active: active (running) since <date_and_time>; <amount_of_time> ago` (hit q to exit the status logs)
      - If instead of `active (running)` this line says `inactive (dead)`, type `sudo systemctl start prova_measurment.service` or `sudo systemctl restart prova_measurment.service`
     
-1. Disabled through SSH, VNC, or the physical Pi:
+2. Disabled through SSH, VNC, or the physical Pi:
    - Open the terminal
    - Change the current directory to the system files directory: type `cd /etc/systemd/system` into the terminal and hit enter
    - Check service status: `sudo systemctl status prova_measurement.service`
