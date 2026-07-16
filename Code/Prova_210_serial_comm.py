@@ -304,7 +304,7 @@ def add_file(filename):
     
 # This function takes in data formatted as a list of lists, and writes it to a csv file, making each sublist its own row
 # This function also adds the created file to the next git commit (this is easier than having to keep track of all the files but maybe bad practice so I might change)
-def write_PV_data(data=[], channel=None, today=None, filename=None):
+def write_PV_data(data=[], channel=None, today=None, filename=None, session_name=None):
     if channel is None:
         channel = CHANNEL
     
@@ -312,12 +312,21 @@ def write_PV_data(data=[], channel=None, today=None, filename=None):
         today = TODAY # might need to recall the function in case they have the program running for multiple days
     print("Writing PV data...")
 
-    if not os.path.isdir(f"{REPO_DIR}/Data/Channel_{channel}"):
-        os.mkdir(f"{REPO_DIR}/Data/Channel_{channel}")
+    if session_name is None:
+        global SESSION_NUMBER
+        session_name = SESSION_NAME + "_" + str(SESSION_NUMBER)
+        SESSION_NUMBER += 1
+
+    if not os.path.isdir(f"{REPO_DIR}/Data/{session_name}"):
+        os.mkdir(f"{REPO_DIR}/Data/{session_name}")
+        
+    if not os.path.isdir(f"{REPO_DIR}/Data/{session_name}/Channel_{channel}"):
+        os.mkdir(f"{REPO_DIR}/Data/{session_name}/Channel_{channel}")
+        
     if filename is None:
-        filename = f"{REPO_DIR}/Data/Channel_{channel}/data_{today}.csv"
-    else:
-        filename = f"{REPO_DIR}/Data/Channel_{channel}/{filename}.csv"
+        filename = f"{REPO_DIR}/Data/{session_name}/Channel_{channel}/{today}-{time}.csv"
+    else: # make it so each time measure is pushed then there is a separate folder that the data is saved into HERE
+        filename = f"{REPO_DIR}/Data/{session_name}/Channel_{channel}/{today}-{time}_{filename}.csv"
         
     with open(filename, mode="a", newline="") as file:
         writer = csv.writer(file)
@@ -381,7 +390,7 @@ def upload_data(today=TODAY, channel=None, files_to_add=None):
     print("Upload complete")
 
 # Takes an autoscan of each of the channels listed every <period> minutes
-def cycle_autoscan(ser=SER, period=1, num_scans=100, channels=None, today=TODAY):
+def cycle_autoscan(ser=SER, period=CYCLE_SCAN_PERIOD, loop_indef=False, num_scans=CYCLE_SCAN_NUM_SCAN, channels=None, today=TODAY):
     if channels is None:
         channels = CYCLE_AUTOSCAN_CHANNELS
         
@@ -392,30 +401,38 @@ def cycle_autoscan(ser=SER, period=1, num_scans=100, channels=None, today=TODAY)
     data = None
     decoded_data = None
     print("Beginning cycle autoscan...")
-
+    
     
     while (scan_num <= num_scans):
         start_time = time.time()
         for channel in channels:
-            select_channel(channel)
+            switch_relay(channel)
             data = autoscan()
             decoded_data = decode_curve(data, channel=channel, sample_num=scan_num, date_time=datetime.now())
             write_PV_data(data=decoded_data, today=today, channel=channel)
+            graph_PV_data(sample_num=scan_num, data=decoded_data, today=today, channel=channel) 
         scan_num += 1
         end_time = time.time()
         time.sleep(period*60-(end_time-start_time))
+    while (loop_indef): # if they want to loop indefinitely
+        start_time = time.time()
+        for channel in channels:
+            switch_relay(channel)
+            data = autoscan()
+            decoded_data = decode_curve(data, channel=channel, sample_num=scan_num, date_time=datetime.now())
+            write_PV_data(data=decoded_data, today=today, channel=channel)
+            graph_PV_data(sample_num=scan_num, data=decoded_data, today=today, channel=channel) 
+        scan_num += 1
+        end_time = time.time()
+        time.sleep(period*60-(end_time-start_time))
+        if (scan_num % 10 == 0):
+            upload_data()
     print("Autoscan complete")
     upload_data(today=today)
     
 if __name__ == "__main__":
     if autorun == True:
         relay_setup()
-        switch_relay(CHANNEL)
-        apply_param()
-        data = autoscan()
-        decoded = decode_curve(data, sample_num=5)
-        write_PV_data(decoded)
-        graph_PV_data(1, decoded)
-        upload_data()
+        cycle_autoscan()
         print(CHANNEL)
         print("Done")
