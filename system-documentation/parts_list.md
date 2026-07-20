@@ -8,5 +8,7 @@ Maybe make this a spreadsheet? and then links to datasheets, etc. could be a bit
 
 2. Switching system:
     - 2x SONGLE SRD-05VDC-SL-C SPDT 8 relay module
+    - 8x Aligator clip wires (4x per module)
   
-3. 
+3. Control system:
+   - 1x Raspberry Pi 400
