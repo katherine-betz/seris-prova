@@ -323,10 +323,12 @@ def write_PV_data(data=[], channel=None, today=None, filename=None, session_name
     if not os.path.isdir(f"{REPO_DIR}/Data/{session_name}/Channel_{channel}"):
         os.mkdir(f"{REPO_DIR}/Data/{session_name}/Channel_{channel}")
         
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
     if filename is None:
-        filename = f"{REPO_DIR}/Data/{session_name}/Channel_{channel}/{today}-{time}.csv"
-    else: # make it so each time measure is pushed then there is a separate folder that the data is saved into HERE
-        filename = f"{REPO_DIR}/Data/{session_name}/Channel_{channel}/{today}-{time}_{filename}.csv"
+        filename = f"{REPO_DIR}/Data/{session_name}/Channel_{channel}/{timestamp}.csv"
+    else:
+        filename = f"{REPO_DIR}/Data/{session_name}/Channel_{channel}/{timestamp}_{filename}.csv"
         
     with open(filename, mode="a", newline="") as file:
         writer = csv.writer(file)
