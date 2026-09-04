@@ -1,7 +1,7 @@
 # This file contains a bunch of different varables for Prova 210
 # Update these values to change the parameters on the prova
 
-CHANNEL = 1 # For non-switching measurements, set the channel
+CHANNEL = 2 # For non-switching measurements, set the channel
 
 CYCLE_AUTOSCAN_CHANNELS = [1, 2] # for switching measurements, set the channels to measure
 
@@ -15,7 +15,7 @@ single_test_point = 10; # "Max": 12.00, "Min": 0.0
 low_power_alarm = 10; # "Max": 1000, "Min": 10.00
 
 CYCLE_SCAN_PERIOD = 2; # Time, in minutes, between measurements
-CYCLE_SCAN_NUM_SCAN = 3; # Number of measurements to be taken total
+CYCLE_SCAN_NUM_SCAN = 1; # Number of measurements to be taken total
 
 SESSION_NAME = "default_session_" # this variable can be changed to change the session folder the data goes into
 # by default the session name will stay the same with only the session number increasing each time

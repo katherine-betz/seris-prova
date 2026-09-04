@@ -49,10 +49,15 @@ def switch_relay(new_channel):
         # disconnectng the previous channel
         for pin in CHANNEL_PINS[CHANNEL]:
             GPIO.output(pin, GPIO.HIGH)
+
+        time.sleep(0.5)
         
         # connecting the new channel 
         for pin in CHANNEL_PINS[new_channel]:
             GPIO.output(pin, GPIO.LOW)
+
+        time.sleep(1.0)
+
         CHANNEL = new_channel
     else:
         print("ERROR: not a valid channel")

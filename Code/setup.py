@@ -1,4 +1,6 @@
+
 from Prova_210_serial_comm import *
+import Prova_210_serial_comm
 
 if __name__ == "__main__":
     os.chdir(Prova_210_serial_comm.REPO_DIR)

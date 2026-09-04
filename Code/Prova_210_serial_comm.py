@@ -397,8 +397,11 @@ def cycle_autoscan(ser=SER, period=CYCLE_SCAN_PERIOD, loop_indef=False, num_scan
         channels = CYCLE_AUTOSCAN_CHANNELS
         
     # Minimum scan time is around 30 sec for one scan
-    if period > len(channels)/2:
+    minimum_period=len(channels)/2
+
+    if period < minimum_period:
         print(f"ERROR: Period too short. Setting period to {len(channels)/2} min")
+        period=minimum_period
     scan_num = 1
     data = None
     decoded_data = None
@@ -415,7 +418,14 @@ def cycle_autoscan(ser=SER, period=CYCLE_SCAN_PERIOD, loop_indef=False, num_scan
             graph_PV_data(sample_num=scan_num, data=decoded_data, today=today, channel=channel) 
         scan_num += 1
         end_time = time.time()
-        time.sleep(period*60-(end_time-start_time))
+        
+        elapsed_time = end_time - start_time
+        remaining_time = period * 60 - elapsed_time
+
+        if remaining_time > 0:
+            time.sleep(remaining_time)
+        else:
+            print("WARNING: Measurement cycle took longer than the requested period.")
     while (loop_indef): # if they want to loop indefinitely
         start_time = time.time()
         for channel in channels:
@@ -426,9 +436,18 @@ def cycle_autoscan(ser=SER, period=CYCLE_SCAN_PERIOD, loop_indef=False, num_scan
             graph_PV_data(sample_num=scan_num, data=decoded_data, today=today, channel=channel) 
         scan_num += 1
         end_time = time.time()
-        time.sleep(period*60-(end_time-start_time))
+
+        elapsed_time=end_time-start_time
+        remaining_time=period*60-elapsed_time
+
+        if remaining_time>0:
+            time.sleep(remaining_time)
+        else:
+            print("WARNING:Measurement cycle took longer than the requested period.")
+
         if (scan_num % 10 == 0):
             upload_data()
+
     print("Autoscan complete")
     upload_data(today=today)
     
