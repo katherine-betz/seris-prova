@@ -14,7 +14,7 @@ irradiance = 50; # "Max": 1000, "Min": 10
 single_test_point = 10; # "Max": 12.00, "Min": 0.0
 low_power_alarm = 10; # "Max": 1000, "Min": 10.00
 
-CYCLE_SCAN_PERIOD = 2; # Time, in minutes, between measurements
+CYCLE_SCAN_PERIOD = 5; # Time, in minutes, between measurements
 CYCLE_SCAN_NUM_SCAN = 1; # Number of measurements to be taken total
 
 SESSION_NAME = "default_session_" # this variable can be changed to change the session folder the data goes into
