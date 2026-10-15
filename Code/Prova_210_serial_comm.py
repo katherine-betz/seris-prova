@@ -5,7 +5,7 @@ import sh, os
 import subprocess
 import csv
 import matplotlib.pyplot as plt
-from datetime import datetime
+from datetime import datetime, timedelta
 from relay_code import *
 from prova_params import *
 
@@ -32,7 +32,6 @@ SER = serial.Serial(
 
 # navigating to the repository directory -- ensures that the files are pushed to the correct place
 REPO_DIR = r"/home/seris/Documents/SERIS-Prova_210_GitHome"
-GIT_TOKEN = "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"
 
 TODAY= str(datetime.now().year) + "-" + str(datetime.now().month) + "-" + str(datetime.now().day)
 
@@ -301,159 +300,352 @@ def add_file(filename):
     os.chdir(REPO_DIR)
     print(filename)
     subprocess.run(["git", "add", filename])
-    
-# This function takes in data formatted as a list of lists, and writes it to a csv file, making each sublist its own row
-# This function also adds the created file to the next git commit (this is easier than having to keep track of all the files but maybe bad practice so I might change)
-def write_PV_data(data=[], channel=None, today=None, filename=None, session_name=None):
+
+
+# Creates the automatic folder structure:
+# Data / YEAR / MONTH / YYYY-MM-DD / Channel_X / Data
+# Data / YEAR / MONTH / YYYY-MM-DD / Channel_X / Graphs
+def get_output_folders(channel, date_time=None):
+    if date_time is None:
+        date_time = datetime.now()
+
+    year = date_time.strftime("%Y")
+    month = date_time.strftime("%m")
+    day = date_time.strftime("%Y-%m-%d")
+
+    channel_folder = os.path.join(
+        REPO_DIR,
+        "Data",
+        year,
+        month,
+        day,
+        f"Channel_{channel}"
+    )
+
+    data_folder = os.path.join(channel_folder, "Data")
+    graph_folder = os.path.join(channel_folder, "Graphs")
+
+    # os.makedirs creates every missing folder level automatically.
+    os.makedirs(data_folder, exist_ok=True)
+    os.makedirs(graph_folder, exist_ok=True)
+
+    return data_folder, graph_folder
+
+
+# Writes one Prova scan to a CSV file in the correct year/month/day/channel folder.
+def write_PV_data(data=None, channel=None, filename=None, date_time=None):
+    if data is None:
+        data = []
+
     if channel is None:
         channel = CHANNEL
-    
-    if today is None:
-        today = TODAY # might need to recall the function in case they have the program running for multiple days
+
+    if date_time is None:
+        date_time = datetime.now()
+
     print("Writing PV data...")
 
-    if session_name is None:
-        global SESSION_NUMBER
-        session_name = SESSION_NAME + "_" + str(SESSION_NUMBER)
-        SESSION_NUMBER += 1
-
-    if not os.path.isdir(f"{REPO_DIR}/Data/{session_name}"):
-        os.mkdir(f"{REPO_DIR}/Data/{session_name}")
-        
-    if not os.path.isdir(f"{REPO_DIR}/Data/{session_name}/Channel_{channel}"):
-        os.mkdir(f"{REPO_DIR}/Data/{session_name}/Channel_{channel}")
-        
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    data_folder, _ = get_output_folders(channel, date_time)
+    timestamp = date_time.strftime("%H-%M-%S")
 
     if filename is None:
-        filename = f"{REPO_DIR}/Data/{session_name}/Channel_{channel}/{timestamp}.csv"
+        filepath = os.path.join(data_folder, f"{timestamp}.csv")
     else:
-        filename = f"{REPO_DIR}/Data/{session_name}/Channel_{channel}/{timestamp}_{filename}.csv"
-        
-    with open(filename, mode="a", newline="") as file:
+        filepath = os.path.join(data_folder, f"{timestamp}_{filename}.csv")
+
+    with open(filepath, mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerows(data)
-    add_file(filename)
-    print("Write complete")
 
-def graph_PV_data(sample_num, data=[], channel=None, today=None, filename=None):
+    add_file(filepath)
+    print(f"Data saved to: {filepath}")
+
+
+# Saves the I-V / power graph for one Prova scan in the matching Graphs folder.
+def graph_PV_data(sample_num, data=None, channel=None, filename=None, date_time=None):
+    if data is None:
+        data = []
+
     if channel is None:
         channel = CHANNEL
-    
-    if today is None:
-        today = TODAY
+
+    if date_time is None:
+        date_time = datetime.now()
 
     print("Graphing PV data...")
 
-    if not os.path.isdir(f"{REPO_DIR}/Data/Channel_{channel}/Graphs"):
-        os.mkdir(f"{REPO_DIR}/Data/Channel_{channel}/Graphs")
-    
+    _, graph_folder = get_output_folders(channel, date_time)
+    timestamp = date_time.strftime("%H-%M-%S")
+
     if filename is None:
-        filename = f"{REPO_DIR}/Data/Channel_{channel}/Graphs/graph_{today}_sample_{sample_num}.png"
+        filepath = os.path.join(graph_folder, f"{timestamp}.png")
     else:
-        filename = f"{REPO_DIR}/Data/Channel_{channel}/Graphs/{filename}.png"
+        filepath = os.path.join(graph_folder, f"{timestamp}_{filename}.png")
+
     voltage = []
     current = []
     power = []
-    
-    for i in range(9, len(data)-2):
+
+    for i in range(9, len(data) - 2):
         voltage.append(data[i][0])
         current.append(data[i][1])
         power.append(data[i][2])
+
     current_col = 'tab:red'
     pwr_col = 'tab:blue'
 
     fig, ax1 = plt.subplots()
     ax1.set_ylabel('Current (mA)')
-    ax1.set_xlabel('Voltage (V)', color=current_col)
-    ax1.plot(voltage, current, color=current_col, linewidth=2, label='Voltage (V)')
+    ax1.set_xlabel('Voltage (V)')
+    ax1.plot(voltage, current, color=current_col, linewidth=2, label='Current (mA)')
     ax1.tick_params(axis='y', labelcolor=current_col)
 
     ax2 = ax1.twinx()
     ax2.set_ylabel('Power (mW)', color=pwr_col)
     ax2.plot(voltage, power, color=pwr_col, linewidth=2, label='Power (mW)')
     ax2.tick_params(axis='y', labelcolor=pwr_col)
+
     fig.tight_layout()
-    plt.savefig(filename)
-    print("Graphing complete")
-    
-# This function uploads data to git, using already added files and adding files if needed
-def upload_data(today=TODAY, channel=None, files_to_add=None):
+    plt.savefig(filepath)
+    plt.close(fig)
+
+    add_file(filepath)
+    print(f"Graph saved to: {filepath}")
+
+
+# Uploads files already staged with git add.
+def upload_data(today=None, files_to_add=None):
+    if today is None:
+        today = datetime.now().strftime("%Y-%m-%d")
+
     print("Uploading data...")
 
     if files_to_add is not None:
         for filename in files_to_add:
             add_file(filename)
-    
-    os.chdir(f"{REPO_DIR}/Data") # assert correct directory
+
+    os.chdir(f"{REPO_DIR}/Data")
     sh.git("pull")
-    sh.git("commit", "-m", f"\"Add data from {today}\"")
+    sh.git("commit", "-m", f"Add data from {today}")
     sh.git("push")
     print("Upload complete")
 
-# Takes an autoscan of each of the channels listed every <period> minutes
-def cycle_autoscan(ser=SER, period=CYCLE_SCAN_PERIOD, loop_indef=False, num_scans=CYCLE_SCAN_NUM_SCAN, channels=None, today=TODAY):
+
+# Returns the start and end times for the calendar day containing 'now'.
+def get_daily_window(now, start_hour, end_hour):
+    start_time = now.replace(
+        hour=start_hour,
+        minute=0,
+        second=0,
+        microsecond=0
+    )
+
+    end_time = now.replace(
+        hour=end_hour,
+        minute=0,
+        second=0,
+        microsecond=0
+    )
+
+    return start_time, end_time
+
+
+# Continuously runs the PV measurement system every day.
+# During each day it scans PV1 -> PV2 every <period> minutes from 07:00 to 20:00.
+# After 20:00 it turns all relays off, waits overnight, and automatically resumes at 07:00.
+def cycle_autoscan(ser=SER, period=CYCLE_SCAN_PERIOD, channels=None,
+                   start_hour=CYCLE_START_HOUR, end_hour=CYCLE_END_HOUR):
+
     if channels is None:
         channels = CYCLE_AUTOSCAN_CHANNELS
-        
-    # Minimum scan time is around 30 sec for one scan
-    minimum_period=len(channels)/2
+
+    # Existing estimate: one Prova scan takes about 30 seconds.
+    # For two channels this gives a theoretical minimum cycle period of 1 minute.
+    minimum_period = len(channels) / 2
 
     if period < minimum_period:
-        print(f"ERROR: Period too short. Setting period to {len(channels)/2} min")
-        period=minimum_period
-    scan_num = 1
-    data = None
-    decoded_data = None
-    print("Beginning cycle autoscan...")
-    
-    
-    while (scan_num <= num_scans):
-        start_time = time.time()
-        for channel in channels:
-            switch_relay(channel)
-            data = autoscan()
-            decoded_data = decode_curve(data, channel=channel, sample_num=scan_num, date_time=datetime.now())
-            write_PV_data(data=decoded_data, today=today, channel=channel)
-            graph_PV_data(sample_num=scan_num, data=decoded_data, today=today, channel=channel) 
-        scan_num += 1
-        end_time = time.time()
-        
-        elapsed_time = end_time - start_time
-        remaining_time = period * 60 - elapsed_time
+        print(
+            f"ERROR: Period too short. "
+            f"Setting period to {minimum_period} min"
+        )
+        period = minimum_period
 
-        if remaining_time > 0:
-            time.sleep(remaining_time)
-        else:
-            print("WARNING: Measurement cycle took longer than the requested period.")
-    while (loop_indef): # if they want to loop indefinitely
-        start_time = time.time()
-        for channel in channels:
-            switch_relay(channel)
-            data = autoscan()
-            decoded_data = decode_curve(data, channel=channel, sample_num=scan_num, date_time=datetime.now())
-            write_PV_data(data=decoded_data, today=today, channel=channel)
-            graph_PV_data(sample_num=scan_num, data=decoded_data, today=today, channel=channel) 
-        scan_num += 1
-        end_time = time.time()
+    print("Beginning continuous daily cycle autoscan...")
+    print(f"Channels: {channels}")
+    print(f"Measurement period: {period} minutes")
+    print(f"Daily operating hours: {start_hour:02d}:00 to {end_hour:02d}:00")
 
-        elapsed_time=end_time-start_time
-        remaining_time=period*60-elapsed_time
+    # Keep every PV module disconnected whenever no measurement is being taken.
+    turn_off()
 
-        if remaining_time>0:
-            time.sleep(remaining_time)
-        else:
-            print("WARNING:Measurement cycle took longer than the requested period.")
+    try:
+        while True:
+            now = datetime.now()
+            start_time_today, end_time_today = get_daily_window(
+                now,
+                start_hour,
+                end_hour
+            )
 
-        if (scan_num % 10 == 0):
-            upload_data()
+            # ----------------------------------------------------------
+            # BEFORE 7 AM: wait until today's 7 AM
+            # ----------------------------------------------------------
+            if now < start_time_today:
+                wait_seconds = (start_time_today - now).total_seconds()
 
-    print("Autoscan complete")
-    upload_data(today=today)
-    
+                print(
+                    f"Waiting until {start_time_today.strftime('%Y-%m-%d %H:%M:%S')} "
+                    f"to begin measurements."
+                )
+
+                turn_off()
+                time.sleep(wait_seconds)
+                continue
+
+            # ----------------------------------------------------------
+            # AT/AFTER 8 PM: wait until 7 AM the next day
+            # ----------------------------------------------------------
+            if now >= end_time_today:
+                next_start = (now + timedelta(days=1)).replace(
+                    hour=start_hour,
+                    minute=0,
+                    second=0,
+                    microsecond=0
+                )
+
+                wait_seconds = (next_start - now).total_seconds()
+
+                print(
+                    f"Daily measurement window finished. "
+                    f"Waiting until {next_start.strftime('%Y-%m-%d %H:%M:%S')}."
+                )
+
+                turn_off()
+                time.sleep(wait_seconds)
+                continue
+
+            # ----------------------------------------------------------
+            # BETWEEN 7 AM AND 8 PM: perform today's measurements
+            # ----------------------------------------------------------
+            measurement_day = now.strftime("%Y-%m-%d")
+            scan_num = 1
+            last_uploaded_scan = 0
+
+            print("\n=====================================")
+            print(f"Starting measurements for {measurement_day}")
+            print("=====================================")
+
+            while datetime.now() < end_time_today:
+                cycle_start_time = time.time()
+
+                print("\n-------------------------------------")
+                print(f"Starting scan cycle {scan_num}")
+                print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                print("-------------------------------------")
+
+                # With CYCLE_AUTOSCAN_CHANNELS = [1, 2], this scans PV1 then PV2.
+                for channel in channels:
+                    # Do not start another module if the daily end time was reached
+                    # while the previous module was being measured.
+                    if datetime.now() >= end_time_today:
+                        break
+
+                    print(f"Switching to PV module {channel}")
+                    switch_relay(channel)
+
+                    # Allow relay contacts to settle before starting the Prova scan.
+                    time.sleep(1)
+
+                    print(f"Scanning PV module {channel}")
+                    data = autoscan(ser)
+
+                    # Use one timestamp for decoding, CSV naming and graph naming
+                    # so the CSV and PNG from one measurement match exactly.
+                    measurement_time = datetime.now()
+
+                    decoded_data = decode_curve(
+                        data,
+                        channel=channel,
+                        sample_num=scan_num,
+                        date_time=measurement_time
+                    )
+
+                    write_PV_data(
+                        data=decoded_data,
+                        channel=channel,
+                        date_time=measurement_time
+                    )
+
+                    graph_PV_data(
+                        sample_num=scan_num,
+                        data=decoded_data,
+                        channel=channel,
+                        date_time=measurement_time
+                    )
+
+                print(f"Scan cycle {scan_num} complete.")
+
+                # Upload after every 10 completed cycles.
+                if scan_num % 10 == 0:
+                    upload_data(today=measurement_day)
+                    last_uploaded_scan = scan_num
+
+                scan_num += 1
+
+                # Keep cycle START times approximately <period> minutes apart.
+                elapsed_time = time.time() - cycle_start_time
+                remaining_time = period * 60 - elapsed_time
+
+                if remaining_time <= 0:
+                    print(
+                        "WARNING: Measurement cycle took longer "
+                        "than the requested period. Starting the next cycle immediately."
+                    )
+                    continue
+
+                # Never sleep past 8 PM.
+                seconds_until_end = (
+                    end_time_today - datetime.now()
+                ).total_seconds()
+
+                if seconds_until_end <= 0:
+                    break
+
+                sleep_time = min(remaining_time, seconds_until_end)
+
+                print(
+                    f"Waiting {sleep_time:.1f} seconds "
+                    "until the next measurement cycle."
+                )
+
+                time.sleep(sleep_time)
+
+            # ----------------------------------------------------------
+            # 8 PM: finish today's run, upload remaining files, then
+            # return to the outer loop which waits for tomorrow at 7 AM.
+            # ----------------------------------------------------------
+            turn_off()
+
+            completed_scans = scan_num - 1
+
+            if completed_scans > last_uploaded_scan:
+                upload_data(today=measurement_day)
+
+            print(
+                f"Measurements for {measurement_day} complete. "
+                f"All relays are off."
+            )
+
+    except KeyboardInterrupt:
+        print("\nProgram stopped by user.")
+
+    finally:
+        # Always disconnect PV modules when the program ends for any reason.
+        turn_off()
+        print("All PV relays are off.")
+
+
 if __name__ == "__main__":
-    if autorun == True:
+    if autorun:
         relay_setup()
         cycle_autoscan()
-        print(CHANNEL)
-        print("Done")
