@@ -21,6 +21,7 @@ low_power_alarm = 10         # Max: 1000, Min: 10.00
 CYCLE_SCAN_PERIOD = 5        # Minutes between the START of each PV1 -> PV2 cycle
 CYCLE_START_HOUR = 7         # Begin measuring each day at 07:00
 CYCLE_END_HOUR = 20          # Stop measuring each day at 20:00
+RELAY_SETTLE_TIME = 5
 
 # Legacy settings retained for compatibility with other project scripts.
 SESSION_NAME = "default_session_"

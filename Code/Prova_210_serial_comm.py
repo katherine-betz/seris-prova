@@ -554,7 +554,7 @@ def cycle_autoscan(ser=SER, period=CYCLE_SCAN_PERIOD, channels=None,
                     switch_relay(channel)
 
                     # Allow relay contacts to settle before starting the Prova scan.
-                    time.sleep(1)
+                    time.sleep(RELAY_SETTLE_TIME)
 
                     print(f"Scanning PV module {channel}")
                     data = autoscan(ser)
